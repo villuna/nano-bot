@@ -19,3 +19,4 @@ Cargo.lock
 /target
 
 token.txt
+test_guild_id.txt

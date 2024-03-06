@@ -1,9 +1,13 @@
-use serenity::async_trait;
+use serenity::all::Interaction;
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
+use serenity::{all::GuildId, async_trait};
 use std::fs;
-use tracing::{error, info, instrument};
+use std::sync::Arc;
+use tracing::{error, info, instrument, span, Instrument, Level};
+
+mod commands;
 
 #[derive(Debug)]
 struct Handler;
@@ -15,8 +19,8 @@ impl EventHandler for Handler {
     #[instrument(
         skip_all,
         fields(
-            author = format!("{}", msg.author),
-            guild = format!("{:?}", msg.guild_id)
+            author = %msg.author,
+            guild = ?msg.guild_id,
         )
     )]
     async fn message(&self, ctx: Context, msg: Message) {
@@ -26,17 +30,54 @@ impl EventHandler for Handler {
                 error!("couldnt react to melo message: {e}");
             }
         }
+    }
 
-        if msg.mentions_me(&ctx.http).await.unwrap_or(false) {
-            info!("recieved ping");
-            msg.reply_ping(&ctx.http, "Pong!")
-                .await
-                .expect("couldnt respond to ping");
+    #[instrument(skip_all)]
+    async fn ready(&self, ctx: Context, ready: Ready) {
+        info!("{} is connected!", ready.user.name);
+
+        let test_guild_id = GuildId::new(
+            fs::read_to_string("test_guild_id.txt")
+                .expect("couldnt read test guild id")
+                .trim()
+                .parse()
+                .expect("guild id must be an integer"),
+        );
+
+        let commands = test_guild_id
+            .set_commands(
+                &ctx.http, 
+                vec![
+                    commands::say_hi::register(),
+                ]
+            )
+            .await;
+
+        if let Err(e) = commands {
+            error!("error creating commands: {e}");
         }
     }
 
-    async fn ready(&self, _: Context, ready: Ready) {
-        info!("{} is connected!", ready.user.name);
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        if let Interaction::Command(cmd) = interaction {
+            let span = span!(
+                Level::INFO, "command", 
+                user = cmd.user.name,
+                guild = ?cmd.guild_id,
+                cmd = cmd.data.name, 
+                options = ?cmd.data.options
+            );
+
+            async move {
+                info!("recieved command");
+                match cmd.data.name.as_str() {
+                    "sayhi" => commands::say_hi::run(ctx.clone(), &cmd).await,
+                    _ => {}
+                }
+            }
+            .instrument(span)
+            .await;
+        }
     }
 }
 
@@ -53,6 +94,16 @@ async fn main() {
         .event_handler(Handler)
         .await
         .expect("Error creating handler");
+
+    let shard_manager = Arc::clone(&client.shard_manager);
+
+    tokio::spawn(async move {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("Could not register interrupt handler");
+        info!("interrupt signal recieved, shutting down");
+        shard_manager.shutdown_all().await;
+    });
 
     if let Err(why) = client.start().await {
         error!("Error starting client: {why}");
