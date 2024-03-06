@@ -8,6 +8,7 @@ use std::sync::Arc;
 use tracing::{error, info, instrument, span, Instrument, Level};
 
 mod commands;
+mod utils;
 
 #[derive(Debug)]
 struct Handler;
@@ -49,6 +50,7 @@ impl EventHandler for Handler {
                 &ctx.http, 
                 vec![
                     commands::say_hi::register(),
+                    commands::hug::register(),
                 ]
             )
             .await;
@@ -72,6 +74,7 @@ impl EventHandler for Handler {
                 info!("recieved command");
                 match cmd.data.name.as_str() {
                     "sayhi" => commands::say_hi::run(ctx.clone(), &cmd).await,
+                    "hug" => commands::hug::run(ctx.clone(), &cmd).await,
                     _ => {}
                 }
             }
@@ -84,6 +87,7 @@ impl EventHandler for Handler {
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
+
     let token = fs::read_to_string("token.txt").expect("couldnt read token.txt");
 
     let intents = GatewayIntents::GUILD_MESSAGES

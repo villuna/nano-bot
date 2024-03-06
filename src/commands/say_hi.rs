@@ -4,16 +4,10 @@ use serenity::{
     prelude::Context,
 };
 use tracing::error;
+use crate::utils::get_name;
 
 pub async fn run(ctx: Context, cmd: &CommandInteraction) {
-    let nickname = match cmd.guild_id {
-        Some(id) => cmd.user.nick_in(&ctx.http, id).await,
-        None => None,
-    };
-
-    let name = nickname.as_ref()
-        .or(cmd.user.global_name.as_ref())
-        .unwrap_or(&cmd.user.name);
+    let name = get_name(&ctx, &cmd.user, cmd.guild_id.as_ref()).await;
 
     let embed = CreateEmbed::new()
         .title(format!("Hi {}!!\nMy name is Shinonome Nano!", name))
