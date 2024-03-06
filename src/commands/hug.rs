@@ -9,7 +9,7 @@ use serenity::{
         CreateInteractionResponseMessage,
     },
     prelude::Context,
-    utils::MessageBuilder,
+    utils::MessageBuilder, model::Colour,
 };
 use tracing::error;
 
@@ -74,7 +74,9 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction) {
             return;
         }
     };
-    let embed = CreateEmbed::new().image(image);
+    let embed = CreateEmbed::new()
+        .image(image)
+        .colour(Colour::FABLED_PINK);
 
     let response_message = CreateInteractionResponseMessage::new()
         .content(message)
