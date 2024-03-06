@@ -2,7 +2,15 @@
 // of creating image commands in the future
 
 use serde::Deserialize;
-use serenity::{prelude::Context, all::{CommandInteraction, CommandOptionType, ResolvedValue, User}, builder::{CreateCommand, CreateCommandOption, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage}, utils::MessageBuilder};
+use serenity::{
+    all::{CommandInteraction, CommandOptionType, ResolvedValue, User},
+    builder::{
+        CreateCommand, CreateCommandOption, CreateEmbed, CreateInteractionResponse,
+        CreateInteractionResponseMessage,
+    },
+    prelude::Context,
+    utils::MessageBuilder,
+};
 use tracing::error;
 
 #[derive(Deserialize)]
@@ -74,10 +82,12 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction) {
 
     if let Err(e) = cmd.create_response(&ctx.http, response).await {
         error!("error sending response message: {e}");
-    } 
+    }
 }
 
 pub fn register() -> CreateCommand {
     let target = CreateCommandOption::new(CommandOptionType::User, "target", "the user to hug");
-    CreateCommand::new("hug").description("hug a user (or yourself)").add_option(target)
+    CreateCommand::new("hug")
+        .description("hug a user (or yourself)")
+        .add_option(target)
 }

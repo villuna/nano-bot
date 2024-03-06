@@ -1,2 +1,2 @@
-pub mod say_hi;
 pub mod hug;
+pub mod say_hi;

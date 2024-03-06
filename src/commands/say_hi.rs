@@ -1,10 +1,10 @@
+use crate::utils::get_name;
 use serenity::{
     all::{CommandInteraction, CreateCommand},
     builder::{CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage},
     prelude::Context,
 };
 use tracing::error;
-use crate::utils::get_name;
 
 pub async fn run(ctx: Context, cmd: &CommandInteraction) {
     let name = get_name(&ctx, &cmd.user, cmd.guild_id.as_ref()).await;

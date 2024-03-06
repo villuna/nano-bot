@@ -47,11 +47,8 @@ impl EventHandler for Handler {
 
         let commands = test_guild_id
             .set_commands(
-                &ctx.http, 
-                vec![
-                    commands::say_hi::register(),
-                    commands::hug::register(),
-                ]
+                &ctx.http,
+                vec![commands::say_hi::register(), commands::hug::register()],
             )
             .await;
 
@@ -63,10 +60,10 @@ impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::Command(cmd) = interaction {
             let span = span!(
-                Level::INFO, "command", 
+                Level::INFO, "command",
                 user = cmd.user.name,
                 guild = ?cmd.guild_id,
-                cmd = cmd.data.name, 
+                cmd = cmd.data.name,
                 options = ?cmd.data.options
             );
 

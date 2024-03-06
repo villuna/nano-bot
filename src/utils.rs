@@ -1,4 +1,7 @@
-use serenity::{all::{GuildId, User}, prelude::Context};
+use serenity::{
+    all::{GuildId, User},
+    prelude::Context,
+};
 
 pub async fn get_name(ctx: &Context, user: &User, guild: Option<&GuildId>) -> String {
     let nickname = match guild {
@@ -6,7 +9,8 @@ pub async fn get_name(ctx: &Context, user: &User, guild: Option<&GuildId>) -> St
         None => None,
     };
 
-    nickname.as_ref()
+    nickname
+        .as_ref()
         .or(user.global_name.as_ref())
         .unwrap_or(&user.name)
         .clone()
