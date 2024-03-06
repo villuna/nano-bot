@@ -67,10 +67,12 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction) {
         }
     };
 
-    // TODO api request
-    let Ok(image) = get_image().await else {
-        error!("couldnt get image");
-        return;
+    let image = match get_image().await {
+        Ok(res) => res,
+        Err(e) => {
+            error!("couldnt get image: {e}");
+            return;
+        }
     };
     let embed = CreateEmbed::new().image(image);
 
