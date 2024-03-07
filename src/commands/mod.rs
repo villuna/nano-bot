@@ -1,2 +1,2 @@
-pub mod hug;
+pub mod action;
 pub mod say_hi;

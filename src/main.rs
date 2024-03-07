@@ -1,3 +1,4 @@
+use commands::action::ActionCommandData;
 use serenity::all::Interaction;
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
@@ -8,10 +9,14 @@ use std::sync::Arc;
 use tracing::{error, info, instrument, span, Instrument, Level};
 
 mod commands;
+#[cfg(test)]
+mod test;
 mod utils;
 
 #[derive(Debug)]
-struct Handler;
+struct Handler {
+    actions: Vec<ActionCommandData>,
+}
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -48,7 +53,10 @@ impl EventHandler for Handler {
         let commands = test_guild_id
             .set_commands(
                 &ctx.http,
-                vec![commands::say_hi::register(), commands::hug::register()],
+                vec![
+                    commands::say_hi::register(),
+                    commands::action::register(&self.actions),
+                ],
             )
             .await;
 
@@ -71,7 +79,7 @@ impl EventHandler for Handler {
                 info!("recieved command");
                 match cmd.data.name.as_str() {
                     "sayhi" => commands::say_hi::run(ctx.clone(), &cmd).await,
-                    "hug" => commands::hug::run(ctx.clone(), &cmd).await,
+                    "action" => commands::action::run(ctx.clone(), &cmd, &self.actions).await,
                     _ => {}
                 }
             }
@@ -91,8 +99,11 @@ async fn main() {
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::MESSAGE_CONTENT;
 
+    let actions =
+        serde_yaml::from_str(&fs::read_to_string("assets/actions.yaml").unwrap()).unwrap();
+
     let mut client = Client::builder(&token, intents)
-        .event_handler(Handler)
+        .event_handler(Handler { actions })
         .await
         .expect("Error creating handler");
 

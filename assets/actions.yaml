@@ -1,0 +1,19 @@
+-
+  kind: hug
+  description: sometimes all you need is a hug
+  targeted messages:
+    - <target>, you have been hugged by <user>
+  lonely messages:
+    - Do you need a hug? Here you go, <user>.
+  nano messages:
+    - Aww, thank you <user>!
+-
+  kind: nom
+  description: om nom nom om nom
+  targeted messages:
+    - <target>, you have been nommed by <user>
+    - Wait, <user>! That's not food! That's <target>!
+  lonely messages:
+    - I'll try not to bite you too hard, <user>.
+  nano messages:
+    - <user>, you want to nom me?? Okay...
