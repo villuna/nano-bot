@@ -43,14 +43,95 @@
 # target.
 # If the user targets themself, the action will pick from "lonely messages".
 
+# Commands that already have messages: 17/68
+# airkiss, bite, bleh, blush, cuddle, handhold, hug, lick, nom, nuzzle, pat, poke, slap, smile, stare, tickle, wave, wink
+
+- kind: airkiss
+  description: Sound effects included
+  lonely messages:
+    - mmmwah
+  targeted messages:
+    - <user> blows a kiss to <target>.
+    - <target> someone sent you a kiss.
+  nano messages:
+    - aww, shucks <user>..
+
+- kind: bite
+  description: like nom, but more nom
+  lonely messages:
+    - You asked for it, <user>.
+  targeted messages:
+    - <target> you look tasty.
+    - <user> bites <target>. Ouch.
+    - I hope <target> is consenting to this.
+  nano messages:
+    - Hey that stings, <user>!
+    
+- kind: bleh
+  description: I'm so silly
+  lonely messages:
+    - Look at <user>! How silly.
+    - <user> says "blehhhhhh"
+  targeted messages:
+    - HEY <target> BLEHHHHhhhh-
+    - <target> this is for you. Blehhh.
+  nano messages:
+    - <user> wow rude!!
+
+- kind: blush
+  description: do your cheeks actually turn red when you blush?
+  lonely messages:
+    - What makes you blush, <user>?
+    - <user> is blushing.. I wonder why?
+  targeted messages:
+    - <target> hello there :flushed:
+    - <user> blushes at <target>.
+    - <user> sees <target> and blushes.
+  nano messages:
+    - Do you like me, <user>? :flushed:
+
+- kind: cuddle
+  description: the best kind of hug
+  lonely messages:
+    - Come here, <user>.
+  targeted messages:
+    - <user> cuddles <target> :two_hearts:
+    - <user> <3 <target>
+    - <target> is receiving cuddles from <user>.
+  nano messages:
+    - <user> UwU
+
+- kind: handhold
+  description: this is the best one tbh
+  lonely messages:
+    - I'll hold your hand, <user>.
+  targeted messages:
+    - <user> holds <target>'s hand.
+    - <user> isn't letting go of <target>.
+    - <target> will you hold <user>'s hand?
+  nano messages:
+    - Holding hands is fun, isn't it <user>?
+
 - kind: hug
   description: sometimes all you need is a hug
   lonely messages:
     - Do you need a hug? Here you go, <user>.
   targeted messages:
-    - <target>, you have been hugged by <user>
+    - <target> is receiving hugs from <user> :heart:
+    - <user> is here for <target> <3
   nano messages:
     - Aww, thank you <user>!
+    
+- kind: lick
+  description: please never do this to anyone irl
+  lonely messages:
+    - Weird thing to ask, but okay <user>.
+  targeted messages:
+    - <target>, you are being slowly dissolved by <user>.
+    - <target>, you have been licked by <user>.
+    - <user> licks <target>. Tasty.
+  nano messages:
+    - <user> hey! Licking bots is not nice.
 
 - kind: nom
   description: om nom nom om nom
@@ -60,10 +141,97 @@
     - <target>, you have been nommed by <user>
     - Wait, <user>! That's not food! That's <target>!
   nano messages:
-    - <user>, you want to nom me?? Okay...
+    - <user>, you want to eat me?? Okay...
 
-- kind: bleh
-  description: I'm so silly
+- kind: nuzzle
+  description: has a 100% chance of inflicting paralysis
   lonely messages:
-    - Look at <user>! How silly.
-    - <user> says "blehhhhhh"
+    - Nano nuzzles <user>.
+  targeted messages:
+    - <user> nuzzles <target>.
+    - <target> get nuzzled :3
+    - <user> is all over <target> :3
+  nano messages:
+    - Hey <user>, that kind of tickles..
+
+- kind: pat
+  description: apply hand to forehead
+  lonely messages:
+    - Nano gives the highest quality pats.
+  targeted messages:
+    - <user> offers head pats to <target>.
+    - <target> is receiving head pats from <user>.
+    - <user> is deploying head pats to <target>.
+  nano messages:
+    - That feels nice, <user>.
+
+- kind: poke
+  description: appropriate in a variety of situations
+  lonely messages:
+    - Poke you? Okay I'll poke you. *pokes <user>*
+  targeted messages:
+    - <target>! Hey <target>! You got poked.
+    - <user> pokes <target>. Poke poke poke poke poke.
+  nano messages:
+    - <user> I will remember this...
+
+- kind: slap
+  description: That's gonna leave a --
+  lonely messages:
+    - <user> you probably deserve this. Maybe.
+  targeted messages:
+    - <user> slaps <target>. Ouch...
+    - <target> you have been slapped by <user>!!
+    - <target> that's gotta sting.
+  nano messages:
+    - <user> slaps Nano :confounded:
+
+- kind: smile
+  description: That's gonna leave a -
+  lonely messages:
+    - Have a great day, <user>.
+  targeted messages:
+    - <user> smiles at <target>.
+    - <user> gives <target> a big smile.
+  nano messages:
+    - <user> you have a great smile.
+
+- kind: stare
+  description: competitive looking
+  lonely messages:
+    - I'm looking at you, <user>.
+  targeted messages:
+    - <user> is peering into <target>'s soul.
+    - <user> stares at <target>......
+    - <user> is watching <target> very closely....
+  nano messages:
+    - Be warned <user>, I'm very good at staring contests.
+
+- kind: tickle
+  description: imagine being ticklish
+  lonely messages:
+    - This will cheer you up <user>.
+  targeted messages:
+    - <user> tickles <target>.
+    - <user> launches a tickle assault on <target>!
+  nano messages:
+    - <user> tickles Na- HEY STOP THAT!
+  
+- kind: wave
+  description: hi hello hey howdy wassup
+  lonely messages:
+    - Hey <user>, do you see me?
+  targeted messages:
+    - Look up <target>, <user> says hello!
+    - <user> waves at <target> :wave:
+  nano messages:
+    - I see you <user>!
+
+- kind: wink
+  description: semicolong closed bracket
+  lonely messages:
+    - <user> winks ;D
+  targeted messages:
+    - <user> winks at <target>.
+  nano messages:
+    - Hey <user>, what's up? :wink:
