@@ -17,6 +17,9 @@ const EMBED_COLOURS: &[Colour] = &[
     Colour::FOOYOO,
     Colour::ROSEWATER,
     Colour::BLURPLE,
+    Colour::MEIBE_PINK,
+    Colour::BLITZ_BLUE,
+    Colour::FADED_PURPLE,
 ];
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
@@ -66,7 +69,9 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, actions: &[ActionComman
     let data = actions.iter().find(|data| data.kind == kind).unwrap();
     let user_mention = MessageBuilder::new().mention(&cmd.user).build();
 
-    let message = if options.is_empty() || matches!(options[0].value, ResolvedValue::User(u, _) if u == &cmd.user) {
+    let message = if options.is_empty()
+        || matches!(options[0].value, ResolvedValue::User(u, _) if u == &cmd.user)
+    {
         let mut rng = rand::thread_rng();
         let template = data.lonely_messages.choose(&mut rng).unwrap();
         template.replace("<user>", &user_mention)
