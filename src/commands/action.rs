@@ -33,7 +33,7 @@ pub struct ActionCommandData {
 
 impl ActionCommandData {
     fn targetable(&self) -> bool {
-        self.targeted_messages.is_some()
+        self.targeted_messages.is_some() && self.nano_messages.is_some()
     }
 }
 

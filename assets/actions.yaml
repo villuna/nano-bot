@@ -1,19 +1,66 @@
--
-  kind: hug
+# The list of actions available via otakugifs.xyz are:
+#
+# airkiss, angrystare, bite, bleh, blush, brofist, celebrate, cheers, clap,
+# confused, cool, cry, cuddle, dance, drool, evillaugh, facepalm, handhold,
+# happy, headbang, hug, kiss, laugh, lick, love, mad, nervous, no, nom,
+# nosebleed, nuzzle, nyah, pat, peek, pinch, poke, pout, punch, roll, run, sad,
+# scared, shout, shrug, shy, sigh, sip, slap, sleep, slowclap, smack, smile,
+# smug, sneeze, sorry, stare, stop, surprised, sweat, thumbsup, tickle, tired,
+# wave, wink, woah, yawn, yay, yes
+#
+# actions.yaml defines flavour text for each one. If the action is not in this
+# file, it won't be supported by the bot. The actions are defined as a list,
+# in no particular order, of maps with the following fields:
+#
+# kind:
+#     Both the name of the command as well as the type of gif that will be
+#     requested from the api.
+# description:
+#     The description of the command. required.
+# lonely messages:
+#     A list of template strings. One of these will be randomly chosen to be
+#     sent as a message alongside the gif. Any occurences of the string <user>
+#     will be replaced by a mention of the user who sent the command.
+#
+# Actions can be targetable or nontargetable. A targetable action will take an
+# optional "target" argument, a user, who will be mentioned in the bot's
+# message. The user is interpreted as the subject of the action, and the target
+# as the object of the action. e.g., the user of the "hug" action is the one
+# hugging the target.
+#
+# Targetable actions must have both of these fields set:
+#
+# targeted messages:
+#     A list of message templates to use if the user targets someone other than
+#     nano or themself
+# nano messages:
+#     A list of message templates to use if the user targets nano
+#
+# In these templates, the string <target> will be replaced by a mention of the 
+# target.
+# If the user targets themself, the action will pick from "lonely messages".
+
+- kind: hug
   description: sometimes all you need is a hug
-  targeted messages:
-    - <target>, you have been hugged by <user>
   lonely messages:
     - Do you need a hug? Here you go, <user>.
+  targeted messages:
+    - <target>, you have been hugged by <user>
   nano messages:
     - Aww, thank you <user>!
--
-  kind: nom
+
+- kind: nom
   description: om nom nom om nom
+  lonely messages:
+    - I'll try not to bite you too hard, <user>.
   targeted messages:
     - <target>, you have been nommed by <user>
     - Wait, <user>! That's not food! That's <target>!
-  lonely messages:
-    - I'll try not to bite you too hard, <user>.
   nano messages:
     - <user>, you want to nom me?? Okay...
+
+- kind: bleh
+  description: I'm so silly
+  lonely messages:
+    - Look at <user>! How silly.
+    - <user> says "blehhhhhh"
