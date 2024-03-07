@@ -4,10 +4,10 @@ use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
-use utils::SharedStopwatch;
 use std::fs;
 use std::sync::Arc;
 use tracing::{error, info, instrument, span, Instrument, Level};
+use utils::SharedStopwatch;
 
 #[cfg(debug_assertions)]
 use serenity::all::GuildId;
@@ -16,17 +16,33 @@ use serenity::all::GuildId;
 use serenity::all::Command;
 
 mod commands;
-#[cfg(test)]
-mod test;
 mod utils;
 
+#[cfg(test)]
+mod test;
 
 #[derive(Debug)]
 struct Handler {
+    // A (static) list of all the data associated with action commands
+    // read from assets/actions.yaml
     actions: Vec<ActionCommandData>,
     // Keep track of how long it's been since the bot was interacted with
     // to make responses to "good bot" seem a bit more normal
     last_interaction: SharedStopwatch,
+}
+
+impl Handler {
+    fn new() -> Self {
+        let actions =
+            serde_yaml::from_str(&fs::read_to_string("assets/actions.yaml").unwrap()).unwrap();
+
+        let last_interaction = SharedStopwatch::new();
+
+        Self {
+            actions,
+            last_interaction,
+        }
+    }
 }
 
 #[async_trait]
@@ -40,7 +56,6 @@ impl EventHandler for Handler {
             guild = ?msg.guild_id,
         )
     )]
-
     async fn message(&self, ctx: Context, msg: Message) {
         if msg.content.starts_with("->melo") {
             info!("recieved melo");
@@ -50,11 +65,30 @@ impl EventHandler for Handler {
             self.last_interaction.set_now().await;
         }
 
-        if msg.content.to_lowercase().trim_matches(|c: char| !c.is_ascii_alphabetic()) == "good bot" {
-            if self.last_interaction.get().await.is_some_and(|t| t.elapsed().as_secs() < 60) {
-                self.last_interaction.reset().await;
+        // Respond to "good bot" messages if nano has done something within the last
+        // 60 seconds
+        if msg
+            .content
+            .to_lowercase()
+            .trim_matches(|c: char| !c.is_ascii_alphabetic())
+            == "good bot"
+        {
+            if self
+                .last_interaction
+                .get()
+                .await
+                .is_some_and(|t| t.elapsed().as_secs() < 60)
+            {
+                // Once she responds to a good bot message, she probably shouldnt respond to
+                // another until she does some other helpful thing
+                // so reset the stopwatch
+                self.last_interaction.unset().await;
 
-                if let Err(e) = msg.channel_id.say(&ctx.http, "I'm not a robot! But thank you.").await {
+                if let Err(e) = msg
+                    .channel_id
+                    .say(&ctx.http, "I'm not a robot! But thank you.")
+                    .await
+                {
                     error!("couldn't send thank you message: {e}");
                 }
             }
@@ -65,6 +99,10 @@ impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         info!("{} is connected!", ready.user.name);
 
+        // Registering commands
+        // For debug runs, the commands will just be registered in my test server as server-scoped
+        // commands update instantly. For release runs, this will be global so that the commands
+        // may be used anywhere.
         cfg_if::cfg_if! {
             if #[cfg(debug_assertions)] {
                 // Register the commands in my test server if this is a debug run
@@ -102,6 +140,9 @@ impl EventHandler for Handler {
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::Command(cmd) = interaction {
+            // just for logging purposes
+            // makes our logs display information about the command
+            // (user, guild, command name, options)
             let span = span!(
                 Level::INFO, "command",
                 user = cmd.user.name,
@@ -110,6 +151,7 @@ impl EventHandler for Handler {
                 options = ?cmd.data.options
             );
 
+            // the whole async move - instrument - await thing is also just for logging purposes
             async move {
                 info!("recieved command");
 
@@ -131,20 +173,19 @@ impl EventHandler for Handler {
 async fn main() {
     tracing_subscriber::fmt::init();
 
+    // Bot authorisation stuff
     let token = fs::read_to_string("token.txt").expect("couldnt read token.txt");
-
     let intents = GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::MESSAGE_CONTENT;
 
-    let actions =
-        serde_yaml::from_str(&fs::read_to_string("assets/actions.yaml").unwrap()).unwrap();
-
+    // Set up the framework with our event handler
     let mut client = Client::builder(&token, intents)
-        .event_handler(Handler { actions, last_interaction: SharedStopwatch::new() })
+        .event_handler(Handler::new())
         .await
         .expect("Error creating handler");
 
+    // Make sure that Ctrl+C gracefully shuts down the bot
     let shard_manager = Arc::clone(&client.shard_manager);
 
     tokio::spawn(async move {
@@ -155,6 +196,7 @@ async fn main() {
         shard_manager.shutdown_all().await;
     });
 
+    // Run the bot
     if let Err(why) = client.start().await {
         error!("Error starting client: {why}");
     }
