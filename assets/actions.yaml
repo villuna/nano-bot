@@ -28,6 +28,9 @@
 # as the object of the action. e.g., the user of the "hug" action is the one
 # hugging the target.
 #
+# If an action is targetable but no target was specified, it is usually
+# interpreted as nano doing that action to the user.
+#
 # Targetable actions must have both of these fields set:
 #
 # targeted messages:

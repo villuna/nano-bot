@@ -66,7 +66,7 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, actions: &[ActionComman
     let data = actions.iter().find(|data| data.kind == kind).unwrap();
     let user_mention = MessageBuilder::new().mention(&cmd.user).build();
 
-    let message = if options.is_empty() {
+    let message = if options.is_empty() || matches!(options[0].value, ResolvedValue::User(u, _) if u == &cmd.user) {
         let mut rng = rand::thread_rng();
         let template = data.lonely_messages.choose(&mut rng).unwrap();
         template.replace("<user>", &user_mention)
@@ -76,7 +76,7 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, actions: &[ActionComman
             return;
         }
 
-        let me: User = ctx.http.get_current_user().await.unwrap().into();
+        let nano: User = ctx.http.get_current_user().await.unwrap().into();
 
         let ResolvedValue::User(target, _) = options[0].value else {
             error!("option passed to slash command is of incorrect type.");
@@ -86,7 +86,7 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, actions: &[ActionComman
         let mut rng = rand::thread_rng();
         let target_mention = MessageBuilder::new().mention(&cmd.user).build();
 
-        let template = if target == &me {
+        let template = if target == &nano {
             data.nano_messages
                 .as_ref()
                 .unwrap()
