@@ -105,6 +105,18 @@ impl EventHandler for Handler {
         // For debug runs, the commands will just be registered in my test server as server-scoped
         // commands update instantly. For release runs, this will be global so that the commands
         // may be used anywhere.
+
+        let commands = vec![
+            commands::help::register(),
+            commands::say_hi::register(),
+            commands::action::register(&self.actions),
+        ];
+
+        *self.help_data.write().await = commands.iter()
+            .cloned()
+            .map(|cmd| cmd.help)
+            .collect();
+
         cfg_if::cfg_if! {
             if #[cfg(debug_assertions)] {
                 // Register the commands in my test server if this is a debug run
@@ -115,17 +127,6 @@ impl EventHandler for Handler {
                         .parse()
                         .expect("guild id must be an integer"),
                 );
-
-                let commands = vec![
-                    commands::help::register(),
-                    commands::say_hi::register(),
-                    commands::action::register(&self.actions),
-                ];
-
-                *self.help_data.write().await = commands.iter()
-                    .cloned()
-                    .map(|cmd| cmd.help)
-                    .collect();
 
                 let register_result = test_guild_id
                     .set_commands(
@@ -139,8 +140,8 @@ impl EventHandler for Handler {
                 }
             } else {
                 // If this is a release run, register them globally
-                for cmd in [commands::say_hi::register(), commands::action::register(&self.actions)] {
-                    if let Err(e) = Command::create_global_command(&ctx.http, cmd).await {
+                for cmd in &commands {
+                    if let Err(e) = Command::create_global_command(&ctx.http, cmd.command.clone()).await {
                         error!("error registering global command: {e}");
                     }
                 }
