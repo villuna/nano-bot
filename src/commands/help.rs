@@ -45,21 +45,7 @@ async fn create_subcommand_help_embed(ctx: &Context, details: &HelpDetails) -> C
     );
     // vertical spacing
     embed = embed.field("", "", false);
-
-    for command in &details.sub_commands {
-        let subcommand_text = (!command.sub_commands.is_empty())
-            .then(|| format!(" `(try /help {} for more details)`", command.name))
-            .unwrap_or("".to_owned());
-
-        embed = embed.field(
-            "",
-            format!(
-                "/**{}**: {}{}",
-                command.name, command.details, subcommand_text
-            ),
-            false,
-        );
-    }
+    embed = add_embed_page(embed, &details.sub_commands, Some(&details.name));
 
     embed
 }
@@ -73,16 +59,27 @@ async fn create_help_embed(ctx: &Context, details: &[HelpDetails]) -> CreateEmbe
         )
         .title("Here are all the commands I can perform:");
 
+    embed = add_embed_page(embed, details, None);
+    embed
+}
+
+fn add_embed_page(
+    mut embed: CreateEmbed,
+    details: &[HelpDetails],
+    prefix: Option<&str>,
+) -> CreateEmbed {
+    let prefix = prefix.map(|s| format!("{s} ")).unwrap_or_default();
+
     for command in details {
         let subcommand_text = (!command.sub_commands.is_empty())
-            .then(|| format!(" `(try /help {} for more details)`", command.name))
+            .then(|| format!(" `(see /help {})`", command.name))
             .unwrap_or("".to_owned());
 
         embed = embed.field(
             "",
             format!(
-                "/**{}**: {}{}",
-                command.name, command.details, subcommand_text
+                "/**{}{}**: {}{}",
+                prefix, command.name, command.details, subcommand_text
             ),
             false,
         );
