@@ -6,6 +6,8 @@ use serenity::{
 };
 use tracing::error;
 
+use super::{help::HelpDetails, CommandDetails};
+
 pub async fn run(ctx: Context, cmd: &CommandInteraction) {
     let name = get_name(&ctx, &cmd.user, cmd.guild_id.as_ref()).await;
 
@@ -21,6 +23,13 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction) {
     }
 }
 
-pub fn register() -> CreateCommand {
-    CreateCommand::new("sayhi").description("say hi to nano")
+pub fn register() -> CommandDetails {
+    let command = CreateCommand::new("sayhi").description("Say hi to Nano");
+    let help = HelpDetails {
+        name: "sayhi".to_string(),
+        details: "Say hi to Nano".to_string(),
+        ..Default::default()
+    };
+
+    CommandDetails { command, help }
 }

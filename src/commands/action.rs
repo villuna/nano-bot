@@ -12,6 +12,8 @@ use serenity::{
 };
 use tracing::error;
 
+use super::{help::HelpDetails, CommandDetails};
+
 const EMBED_COLOURS: &[Colour] = &[
     Colour::FABLED_PINK,
     Colour::FOOYOO,
@@ -138,9 +140,14 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, actions: &[ActionComman
     }
 }
 
-pub fn register(commands: &[ActionCommandData]) -> CreateCommand {
+pub fn register(commands: &[ActionCommandData]) -> CommandDetails {
     let mut command =
         CreateCommand::new("action").description("perform an action, as represented by a gif");
+    let mut help = HelpDetails {
+        name: "action".to_string(),
+        details: "perform an action, as represented by a gif".to_string(),
+        sub_commands: Vec::new(),
+    };
 
     for data in commands {
         let mut action =
@@ -153,7 +160,12 @@ pub fn register(commands: &[ActionCommandData]) -> CreateCommand {
         }
 
         command = command.add_option(action);
+        help.sub_commands.push(HelpDetails {
+            name: data.kind.clone(),
+            details: data.description.clone(),
+            sub_commands: Vec::new(),
+        });
     }
 
-    command
+    CommandDetails { command, help }
 }

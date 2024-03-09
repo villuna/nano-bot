@@ -1,4 +1,4 @@
-use commands::action::ActionCommandData;
+use commands::{action::ActionCommandData, help::HelpDetails};
 use serenity::all::Interaction;
 use serenity::async_trait;
 use serenity::model::channel::Message;
@@ -29,6 +29,7 @@ struct Handler {
     // Keep track of how long it's been since the bot was interacted with
     // to make responses to "good bot" seem a bit more normal
     last_interaction: SharedStopwatch,
+    help_data: Arc<RwLock<Vec<HelpDetails>>>,
 }
 
 impl Handler {
@@ -41,6 +42,7 @@ impl Handler {
         Self {
             actions,
             last_interaction,
+            help_data: Arc::new(RwLock::new(Vec::new())),
         }
     }
 }
@@ -67,30 +69,30 @@ impl EventHandler for Handler {
 
         // Respond to "good bot" messages if nano has done something within the last
         // 60 seconds
-        if msg
+        let good_bot_msg = msg
             .content
             .to_lowercase()
             .trim_matches(|c: char| !c.is_ascii_alphabetic())
-            == "good bot"
-        {
-            if self
+            == "good bot";
+
+        if good_bot_msg
+            && self
                 .last_interaction
                 .get()
                 .await
                 .is_some_and(|t| t.elapsed().as_secs() < 60)
-            {
-                // Once she responds to a good bot message, she probably shouldnt respond to
-                // another until she does some other helpful thing
-                // so reset the stopwatch
-                self.last_interaction.unset().await;
+        {
+            // Once she responds to a good bot message, she probably shouldnt respond to
+            // another until she does some other helpful thing
+            // so reset the stopwatch
+            self.last_interaction.unset().await;
 
-                if let Err(e) = msg
-                    .channel_id
-                    .say(&ctx.http, "I'm not a robot! But thank you.")
-                    .await
-                {
-                    error!("couldn't send thank you message: {e}");
-                }
+            if let Err(e) = msg
+                .channel_id
+                .say(&ctx.http, "I'm not a robot! But thank you.")
+                .await
+            {
+                error!("couldn't send thank you message: {e}");
             }
         }
     }
@@ -114,17 +116,25 @@ impl EventHandler for Handler {
                         .expect("guild id must be an integer"),
                 );
 
-                let commands = test_guild_id
+                let commands = vec![
+                    commands::help::register(),
+                    commands::say_hi::register(),
+                    commands::action::register(&self.actions),
+                ];
+
+                *self.help_data.write().await = commands.iter()
+                    .cloned()
+                    .map(|cmd| cmd.help)
+                    .collect();
+
+                let register_result = test_guild_id
                     .set_commands(
                         &ctx.http,
-                        vec![
-                            commands::say_hi::register(),
-                            commands::action::register(&self.actions),
-                        ],
+                        commands.iter().map(|cmd| cmd.command.clone()).collect(),
                     )
                     .await;
 
-                if let Err(e) = commands {
+                if let Err(e) = register_result {
                     error!("error creating server test commands: {e}");
                 }
             } else {
@@ -158,6 +168,9 @@ impl EventHandler for Handler {
                 match cmd.data.name.as_str() {
                     "sayhi" => commands::say_hi::run(ctx.clone(), &cmd).await,
                     "action" => commands::action::run(ctx.clone(), &cmd, &self.actions).await,
+                    "help" => {
+                        commands::help::run(ctx.clone(), &cmd, &self.help_data.read().await).await
+                    }
                     _ => {}
                 }
 

@@ -29,6 +29,13 @@ pub async fn get_name(ctx: &Context, user: &User, guild: Option<&GuildId>) -> St
         .clone()
 }
 
+pub async fn get_nano_icon(ctx: &Context) -> String {
+    let user = ctx.http.get_current_user().await.unwrap();
+
+    user.avatar_url()
+        .unwrap_or_else(|| user.default_avatar_url())
+}
+
 /// A thread safe, interior-mutable stopwatch
 /// simply records instants in time and returns them
 #[derive(Debug)]
