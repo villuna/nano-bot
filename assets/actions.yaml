@@ -43,7 +43,7 @@
 # target.
 # If the user targets themself, the action will pick from "lonely messages".
 
-# Commands that already have messages: 17/68
+# Commands that already have messages: 18/68
 # airkiss, bite, bleh, blush, cuddle, handhold, hug, lick, nom, nuzzle, pat, poke, slap, smile, stare, tickle, wave, wink
 
 - kind: airkiss
@@ -52,7 +52,7 @@
     - mmmwah
   targeted messages:
     - <user> blows a kiss to <target>.
-    - <target> someone sent you a kiss.
+    - <target>, someone sent you a kiss.
   nano messages:
     - aww, shucks <user>..
 
