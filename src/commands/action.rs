@@ -91,7 +91,7 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, actions: &[ActionComman
         };
 
         let mut rng = rand::thread_rng();
-        let target_mention = MessageBuilder::new().mention(&cmd.user).build();
+        let target_mention = MessageBuilder::new().mention(target).build();
 
         let template = if target == &nano {
             data.nano_messages
