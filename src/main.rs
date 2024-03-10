@@ -1,4 +1,5 @@
 use serenity::prelude::*;
+use tokio::signal::unix::SignalKind;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling::Rotation;
 use std::{fs, io};
@@ -7,6 +8,7 @@ use tracing::{error, info};
 use tracing_subscriber::fmt;
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
+use tokio::signal;
 
 mod commands;
 mod event_handler;
@@ -67,9 +69,31 @@ async fn main() {
     let shard_manager = Arc::clone(&client.shard_manager);
 
     tokio::spawn(async move {
-        tokio::signal::ctrl_c()
-            .await
-            .expect("Could not register interrupt handler");
+        #[cfg(target_family = "unix")]
+        let shutdown_signal = async {
+            let ctrl_c = signal::ctrl_c();
+            let mut sigterm = signal::unix::signal(SignalKind::terminate())
+                .expect("couldn't register sigterm handler");
+
+            tokio::select! {
+                res1 = ctrl_c => res1.expect("couldnt register ctrl_c handler"),
+                res2 = sigterm.recv() => {
+                    if res2.is_none() {
+                        error!("sigterm recv error");
+                    }
+                },
+            };
+        };
+
+        #[cfg(not(target_family = "unix"))]
+        let shutdown_signal = async {
+            signal::ctrl_c()
+                .await
+                .expect("couldnt register ctrl_c handler");
+        };
+
+        shutdown_signal.await;
+
         info!("interrupt signal recieved, shutting down");
         shard_manager.shutdown_all().await;
     });
