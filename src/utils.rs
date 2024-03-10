@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::time::Instant;
 
@@ -39,12 +38,12 @@ pub async fn get_nano_icon(ctx: &Context) -> String {
 /// A thread safe, interior-mutable stopwatch
 /// simply records instants in time and returns them
 #[derive(Debug)]
-pub struct SharedStopwatch(Arc<RwLock<Option<Instant>>>);
+pub struct SharedStopwatch(RwLock<Option<Instant>>);
 
 impl SharedStopwatch {
     /// Creates a new, unset stopwatch
     pub fn new() -> Self {
-        Self(Arc::new(RwLock::new(None)))
+        Self(RwLock::new(None))
     }
 
     /// Sets the stopwatch's start time to now

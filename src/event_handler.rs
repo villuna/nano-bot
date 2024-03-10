@@ -7,7 +7,6 @@ use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 use std::fs;
-use std::sync::Arc;
 use tracing::{error, info, instrument, span, Instrument, Level};
 
 #[cfg(debug_assertions)]
@@ -24,7 +23,7 @@ pub struct Handler {
     // Keep track of how long it's been since the bot was interacted with
     // to make responses to "good bot" seem a bit more normal
     last_interaction: SharedStopwatch,
-    help_data: Arc<RwLock<Vec<HelpDetails>>>,
+    help_data: RwLock<Vec<HelpDetails>>,
 }
 
 impl Handler {
@@ -37,7 +36,7 @@ impl Handler {
         Self {
             actions,
             last_interaction,
-            help_data: Arc::new(RwLock::new(Vec::new())),
+            help_data: RwLock::new(Vec::new()),
         }
     }
 }
