@@ -1,7 +1,12 @@
 use serenity::prelude::*;
-use std::fs;
+use tracing_appender::non_blocking::WorkerGuard;
+use tracing_appender::rolling::Rotation;
+use std::{fs, io};
 use std::sync::Arc;
 use tracing::{error, info};
+use tracing_subscriber::fmt;
+use tracing_subscriber::filter::EnvFilter;
+use tracing_subscriber::layer::SubscriberExt;
 
 mod commands;
 mod event_handler;
@@ -10,9 +15,41 @@ mod utils;
 #[cfg(test)]
 mod test;
 
+fn setup_logging() -> Result<WorkerGuard, Box<dyn std::error::Error>> {
+    std::fs::create_dir_all("./log")?;
+
+    let file_appender = tracing_appender::rolling::Builder::new()
+        .rotation(Rotation::DAILY)
+        .filename_prefix("nano")
+        .filename_suffix("log")
+        .max_log_files(10)
+        .build("./log")?;
+
+    let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
+
+    let subscriber = tracing_subscriber::registry()
+        .with(EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into()))
+        .with(fmt::Layer::new().with_writer(io::stdout))
+        .with(fmt::Layer::new().with_writer(non_blocking));
+    tracing::subscriber::set_global_default(subscriber).expect("unable to set a global subscriber");
+
+    Ok(guard)
+}
+
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
+    let _guard = match setup_logging() {
+        Ok(guard) => {
+            Some(guard)
+        },
+        Err(e) => {
+            fmt::init();
+            // It does occur to me that this error message will be lost forever
+            // but maybe it will be important
+            error!("error setting up log file logging: {e}");
+            None
+        },
+    };
 
     // Bot authorisation stuff
     let token = fs::read_to_string("token.txt").expect("couldnt read token.txt");
