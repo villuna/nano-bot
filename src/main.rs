@@ -17,6 +17,9 @@ mod utils;
 #[cfg(test)]
 mod test;
 
+/// Set up the logging system
+/// Logs will be sent to stdout for testing purposes, as well as being written to daily log files,
+/// stored in the ./log/ directory (only the last 10 files will be kept).
 fn setup_logging() -> Result<WorkerGuard, Box<dyn std::error::Error>> {
     std::fs::create_dir_all("./log")?;
 
@@ -40,6 +43,8 @@ fn setup_logging() -> Result<WorkerGuard, Box<dyn std::error::Error>> {
 
 #[tokio::main]
 async fn main() {
+    // logging to file only gets done so long as this guard exists
+    // so we hold onto it for the duration of the program
     let _guard = match setup_logging() {
         Ok(guard) => {
             Some(guard)

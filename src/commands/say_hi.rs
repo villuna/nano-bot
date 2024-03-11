@@ -1,19 +1,34 @@
 use crate::utils::get_name;
+use rand::{seq::SliceRandom, thread_rng};
+use serde::Deserialize;
 use serenity::{
     all::{CommandInteraction, CreateCommand},
     builder::{CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage},
-    prelude::Context,
+    prelude::Context, utils::MessageBuilder,
 };
 use tracing::error;
 
 use super::{help::HelpDetails, CommandDetails};
 
-pub async fn run(ctx: Context, cmd: &CommandInteraction) {
+#[derive(Deserialize, Debug, Clone)]
+pub struct SayHiData {
+    message: String,
+    gif: String,
+}
+
+pub async fn run(ctx: Context, cmd: &CommandInteraction, data: &[SayHiData]) {
     let name = get_name(&ctx, &cmd.user, cmd.guild_id.as_ref()).await;
+    let sanitised_name = MessageBuilder::new()
+        .push_safe(name)
+        .build();
+
+    let message = data.choose(&mut thread_rng()).unwrap();
+    let title = &message.message;
+    let gif = &message.gif;
 
     let embed = CreateEmbed::new()
-        .title(format!("Hi {}!!\nMy name is Shinonome Nano!", name))
-        .image("https://media1.tenor.com/m/yan7w90ts3MAAAAC/nichijou.gif");
+        .title(title.replace("<name>", &sanitised_name))
+        .image(gif);
 
     let message = CreateInteractionResponseMessage::new().embed(embed);
     let builder = CreateInteractionResponse::Message(message);

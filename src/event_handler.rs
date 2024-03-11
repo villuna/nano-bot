@@ -1,4 +1,5 @@
 use crate::commands;
+use crate::commands::say_hi::SayHiData;
 use crate::commands::{action::ActionCommandData, help::HelpDetails};
 use crate::utils::SharedStopwatch;
 use serenity::all::Interaction;
@@ -20,6 +21,7 @@ pub struct Handler {
     // A (static) list of all the data associated with action commands
     // read from assets/actions.yaml
     actions: Vec<ActionCommandData>,
+    say_hi_data: Vec<SayHiData>,
     // Keep track of how long it's been since the bot was interacted with
     // to make responses to "good bot" seem a bit more normal
     last_interaction: SharedStopwatch,
@@ -30,6 +32,8 @@ impl Handler {
     pub fn new() -> Self {
         let actions =
             serde_yaml::from_str(&fs::read_to_string("assets/actions.yaml").unwrap()).unwrap();
+        let say_hi_data =
+            serde_yaml::from_str(&fs::read_to_string("assets/say_hi.yaml").unwrap()).unwrap();
 
         let last_interaction = SharedStopwatch::new();
 
@@ -37,6 +41,7 @@ impl Handler {
             actions,
             last_interaction,
             help_data: RwLock::new(Vec::new()),
+            say_hi_data,
         }
     }
 }
@@ -158,7 +163,7 @@ impl EventHandler for Handler {
                 info!("recieved command");
 
                 match cmd.data.name.as_str() {
-                    "sayhi" => commands::say_hi::run(ctx.clone(), &cmd).await,
+                    "sayhi" => commands::say_hi::run(ctx.clone(), &cmd, &self.say_hi_data).await,
                     "action" => commands::action::run(ctx.clone(), &cmd, &self.actions).await,
                     "help" => {
                         commands::help::run(ctx.clone(), &cmd, &self.help_data.read().await).await
