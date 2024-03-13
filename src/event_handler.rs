@@ -66,32 +66,47 @@ impl EventHandler for Handler {
             self.last_interaction.set_now().await;
         }
 
-        // Respond to "good bot" messages if nano has done something within the last
-        // 60 seconds
-        let good_bot_msg = msg
-            .content
-            .to_lowercase()
-            .trim_matches(|c: char| !c.is_ascii_alphabetic())
-            == "good bot";
-
-        if good_bot_msg
-            && self
-                .last_interaction
-                .get()
-                .await
-                .is_some_and(|t| t.elapsed().as_secs() < 60)
+        if self
+            .last_interaction
+            .get()
+            .await
+            .is_some_and(|t| t.elapsed().as_secs() < 60)
         {
-            // Once she responds to a good bot message, she probably shouldnt respond to
-            // another until she does some other helpful thing
-            // so reset the stopwatch
-            self.last_interaction.unset().await;
+            // Respond to "good/bad bot" messages if nano has done something within the last
+            // 60 seconds
+            let is_good_bot = msg
+                .content
+                .to_lowercase()
+                .trim_matches(|c: char| !c.is_ascii_alphabetic())
+                == "good bot";
 
-            if let Err(e) = msg
-                .channel_id
-                .say(&ctx.http, "I'm not a robot! But thank you.")
-                .await
-            {
-                error!("couldn't send thank you message: {e}");
+            let is_bad_bot = msg
+                .content
+                .to_lowercase()
+                .trim_matches(|c: char| !c.is_ascii_alphabetic())
+                == "bad bot";
+
+            if is_good_bot {
+                // Once she responds to a good/bad bot message, she probably shouldnt respond to
+                // another until she does some other helpful thing
+                // so reset the stopwatch
+                self.last_interaction.unset().await;
+
+                if let Err(e) = msg
+                    .channel_id
+                    .say(&ctx.http, "I'm not a robot! But thank you.")
+                    .await
+                {
+                    error!("couldn't send thank you message: {e}");
+                }
+            } else if is_bad_bot {
+                self.last_interaction.unset().await;
+
+                let gif_url = "https://media1.tenor.com/m/02kmUuBVE9IAAAAd/watch-yo-tone-nichijou.gif";
+
+                if let Err(e) = msg.reply_ping(&ctx.http, gif_url).await {
+                    error!("couldnt slap user: {e}");
+                }
             }
         }
     }
