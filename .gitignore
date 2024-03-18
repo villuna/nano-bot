@@ -17,8 +17,10 @@ Cargo.lock
 # Added by cargo
 
 /target
+/log
 
 token.txt
+release_token.txt
 test_guild_id.txt
 
 release
