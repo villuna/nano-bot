@@ -96,11 +96,11 @@
     - What makes you blush, <user>?
     - <user> is blushing.. I wonder why?
   targeted messages:
-    - <target> hello there :flushed:
+    - <target> hello there 😳
     - <user> blushes at <target>.
     - <user> sees <target> and blushes.
   nano messages:
-    - Do you like me, <user>? :flushed:
+    - Do you like me, <user>? 😳
 
 - kind: clap
   description: if you're happy and you know it
@@ -110,14 +110,14 @@
     - <user> is celebrating for <target>.
     - <user> applauds <target>.
   nano messages:
-    - <user> :smiling_face_with_3_hearts:
+    - <user> 🥰
 
 - kind: cuddle
   description: the best kind of hug
   lonely messages:
     - Come here, <user>.
   targeted messages:
-    - <user> cuddles <target> :two_hearts:
+    - <user> cuddles <target> 💕
     - <user> <3 <target>
     - <target> receives cuddles from <user>.
   nano messages:
@@ -169,14 +169,14 @@
   lonely messages:
     - Do you need a hug? Here you go, <user>.
   targeted messages:
-    - <user> hugs <target> :heart:
+    - <user> hugs <target> ❤️
     - <user> gives <target> a biiiig hug.
     - <user> is here for <target> <3
   nano messages:
     - Aww, thank you <user>!
 
 - kind: laugh
-  description: hahahahaha etc.
+  description: hahahahaha
   lonely messages:
     - <user> laughs.
   targeted messages:
@@ -186,7 +186,7 @@
     - <user> did I say something funny?
     
 - kind: lick
-  description: please never do this to me irl
+  description: please never do this to people irl
   lonely messages:
     - You taste funny, <user>.
   targeted messages:
@@ -201,11 +201,11 @@
   lonely messages:
     - <user> is in love.
   targeted messages:
-    - <user> is in love with <target> :sparkling_heart:
-    - <user> sends all their love to <target> :heart:
-    - <target> :revolving_hearts: <user>
+    - <user> is in love with <target> 💖
+    - <user> sends all their love to <target> ❤️
+    - <target> 💞 <user>
   nano messages:
-    - <user> Aww I love you too :heart:
+    - <user> Aww I love you too ❤️
 
 - kind: nom
   description: om nom nom om nom
@@ -240,7 +240,7 @@
     - That feels nice, <user>.
 
 - kind: peek
-  description: peek pook paak piik puuk
+  description: o.o
   lonely messages:
     - <user> is being sneaky.
   targeted messages:
@@ -269,17 +269,6 @@
   nano messages:
     - <user> I will remember this...
 
-- kind: shrug
-  description: a non-committal gesture of ambiguous meaning.
-  lonely messages:
-    - <user> you probably deserve this.
-  targeted messages:
-    - <user> slaps <target>. Ouch...
-    - <target> you have been slapped by <user>!!
-    - <target> that's gotta sting.
-  nano messages:
-    - <user> slaps Nano :confounded:
-
 - kind: sigh
   description: breathe it out
   lonely messages:
@@ -299,10 +288,10 @@
     - <target> you have been slapped by <user>!!
     - <target> that's gotta sting.
   nano messages:
-    - <user> slaps Nano :confounded:
+    - <user> slaps Nano 😖
 
 - kind: smile
-  description: That's gonna leave a -
+  description: :)
   lonely messages:
     - Have a great day, <user>.
   targeted messages:
@@ -348,7 +337,7 @@
     - <user> says hello.
   targeted messages:
     - Heads up <target>, <user> says hi!
-    - <user> waves at <target> :wave:
+    - <user> waves at <target> 👋
   nano messages:
     - I see you <user>!
 
