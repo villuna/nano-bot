@@ -43,27 +43,311 @@
 # target.
 # If the user targets themself, the action will pick from "lonely messages".
 
+# Commands that already have messages: 26/68
+# airkiss, angrystare, bite, bleh, blush, clap, cuddle, dance, drool, evillaugh, handhold, hug, lick,
+# love, nom, nuzzle, pat, poke, pinch, slap, smile, stare, tickle, tired, wave, wink
+
+- kind: airkiss
+  description: Sound effects included
+  lonely messages:
+    - mmmwah
+  targeted messages:
+    - <user> blows a kiss to <target>.
+    - <target>, someone sent you a kiss.
+  nano messages:
+    - aww, shucks <user>..
+
+- kind: angrystare
+  description: use against your enemies
+  lonely messages:
+    - <user> stares angrily.
+    - <user> is angry about something.
+  targeted messages:
+    - <user> stares angrily at <target>.
+    - <user> hits <target> with a death stare.
+  nano messages:
+    - <user> is trying to intimidate Nano...
+
+- kind: bite
+  description: like nom, but more nom
+  lonely messages:
+    - You asked for it, <user>.
+  targeted messages:
+    - <target> you look tasty.
+    - <user> bites <target>. Ouch.
+    - I hope <target> is consenting to this.
+  nano messages:
+    - Hey that stings, <user>!
+    
+- kind: bleh
+  description: I'm so silly
+  lonely messages:
+    - Look at <user>! How silly.
+    - <user> says "blehhhhhh"
+  targeted messages:
+    - HEY <target> BLEHHHHhhhh-
+    - <target> this is for you. Blehhh.
+  nano messages:
+    - <user> wow rude!!
+
+- kind: blush
+  description: do your cheeks actually turn red when you blush?
+  lonely messages:
+    - What makes you blush, <user>?
+    - <user> is blushing.. I wonder why?
+  targeted messages:
+    - <target> hello there 😳
+    - <user> blushes at <target>.
+    - <user> sees <target> and blushes.
+  nano messages:
+    - Do you like me, <user>? 😳
+
+- kind: clap
+  description: if you're happy and you know it
+  lonely messages:
+    -  A round of applause for <user>!
+  targeted messages:
+    - <user> is celebrating for <target>.
+    - <user> applauds <target>.
+  nano messages:
+    - <user> 🥰
+
+- kind: cuddle
+  description: the best kind of hug
+  lonely messages:
+    - Come here, <user>.
+  targeted messages:
+    - <user> cuddles <target> 💕
+    - <user> <3 <target>
+    - <target> receives cuddles from <user>.
+  nano messages:
+    - <user> UwU
+
+- kind: dance
+  description: dancing is really hard :(
+  lonely messages:
+    - <user> knows all the moves.
+  targeted messages:
+    - <target> can you dance like <user> can?
+    - <target> how do you like these moves?
+  nano messages:
+    - <user> wow, such grace!
+
+- kind: drool
+  description: I'm sure none of these gifs will be lewd
+  lonely messages:
+    - <user>'s brain is mush.
+  targeted messages:
+    - <target> is making <user> drool.
+    - <user> is salivating at the thought of <target>.
+  nano messages:
+    - <user> are you going to eat me?
+
+- kind: evillaugh
+  description: muahahaha
+  lonely messages:
+    - <user> is cooking up some evil plans.
+  targeted messages:
+    - <target> muahahahahaaa.
+    - <user> laughs maniacally at <target>.
+  nano messages:
+    - <user> w-what are you planning!?
+
+- kind: handhold
+  description: this is the best one tbh
+  lonely messages:
+    - I'll hold your hand, <user>.
+  targeted messages:
+    - <user> holds <target>'s hand.
+    - <user> isn't letting go of <target>.
+    - <target> will you hold <user>'s hand?
+  nano messages:
+    - Holding hands is fun, isn't it <user>?
+
 - kind: hug
   description: sometimes all you need is a hug
   lonely messages:
     - Do you need a hug? Here you go, <user>.
   targeted messages:
-    - <target>, you have been hugged by <user>
+    - <user> hugs <target> ❤️
+    - <user> gives <target> a biiiig hug.
+    - <user> is here for <target> <3
   nano messages:
     - Aww, thank you <user>!
+
+- kind: laugh
+  description: hahahahaha
+  lonely messages:
+    - <user> laughs.
+  targeted messages:
+    - <target> makes <user> laugh.
+    - <user> laughs at <target>.
+  nano messages:
+    - <user> did I say something funny?
+    
+- kind: lick
+  description: please never do this to people irl
+  lonely messages:
+    - You taste funny, <user>.
+  targeted messages:
+    - <target>, you are being slowly dissolved by <user>.
+    - <target>, you have been licked by <user>.
+    - <user> licks <target>. Hmm.
+  nano messages:
+    - <user> hey! Licking bots is not nice.
+
+- kind: love
+  description: overly enthusiastic gifs.
+  lonely messages:
+    - <user> is in love.
+  targeted messages:
+    - <user> is in love with <target> 💖
+    - <user> sends all their love to <target> ❤️
+    - <target> 💞 <user>
+  nano messages:
+    - <user> Aww I love you too ❤️
 
 - kind: nom
   description: om nom nom om nom
   lonely messages:
     - I'll try not to bite you too hard, <user>.
   targeted messages:
-    - <target>, you have been nommed by <user>
+    - <target>, you have been nommed by <user>!
     - Wait, <user>! That's not food! That's <target>!
   nano messages:
-    - <user>, you want to nom me?? Okay...
+    - <user>, you want to eat me?? Okay...
 
-- kind: bleh
-  description: I'm so silly
+- kind: nuzzle
+  description: has a 100% chance of inflicting paralysis
   lonely messages:
-    - Look at <user>! How silly.
-    - <user> says "blehhhhhh"
+    - Nano nuzzles <user>.
+  targeted messages:
+    - <user> nuzzles <target>.
+    - <user> wants to be close to <target>.
+    - <user> is all over <target>.
+  nano messages:
+    - Hey <user>, that kind of tickles.
+
+- kind: pat
+  description: apply hand to forehead
+  lonely messages:
+    - Nano gives the highest quality pats.
+  targeted messages:
+    - <user> offers head pats to <target>.
+    - <target> is receiving head pats from <user>.
+    - <user> is deploying head pats to <target>.
+  nano messages:
+    - That feels nice, <user>.
+
+- kind: peek
+  description: o.o
+  lonely messages:
+    - <user> is being sneaky.
+  targeted messages:
+    - <user> takes a peek at <target>.
+    - <target> you're being spied on.
+  nano messages:
+    - I can see you, <user>.
+
+- kind: pinch
+  description: use when 1st of the month.
+  lonely messages:
+    - You're not dreaming, <user>.
+  targeted messages:
+    - <user> pinches <target>.
+    - <target> snap out of it!
+  nano messages:
+    - <user> oi!
+    
+- kind: poke
+  description: appropriate in a variety of situations
+  lonely messages:
+    - Poke you? Okay I'll poke you. *pokes <user>*
+  targeted messages:
+    - <target>! Hey <target>! You got poked.
+    - <user> pokes <target>. Poke poke poke poke poke.
+  nano messages:
+    - <user> I will remember this...
+
+- kind: sigh
+  description: breathe it out
+  lonely messages:
+    - <user> lets out a sigh.
+    - <user> is ready for bed.
+  targeted messages:
+    - <user> sighs at <target>.
+  nano messages:
+    - Did I do something wrong, <user>?
+
+- kind: slap
+  description: That's gonna leave a --
+  lonely messages:
+    - <user> you probably deserve this.
+  targeted messages:
+    - <user> slaps <target>. Ouch...
+    - <target> you have been slapped by <user>!!
+    - <target> that's gotta sting.
+  nano messages:
+    - <user> slaps Nano 😖
+
+- kind: smile
+  description: :)
+  lonely messages:
+    - Have a great day, <user>.
+  targeted messages:
+    - <user> smiles at <target>.
+    - <user> gives <target> a big smile.
+  nano messages:
+    - <user> you have a great smile.
+
+- kind: stare
+  description: competitive looking
+  lonely messages:
+    - I'm looking at you, <user>.
+  targeted messages:
+    - <user> is peering into <target>'s soul.
+    - <user> stares at <target>......
+    - <user> is watching <target> closely....
+  nano messages:
+    - <user> I'm very good at staring contests.
+
+- kind: tired
+  description: me 24 hours a day
+  lonely messages:
+    - <user> is exhausted.
+  targeted messages:
+    - <user> wants <target> to know they are tired.
+    - <target> it looks like <user> is ready for bed.
+  nano messages:
+    - Nano feels you, <user>.
+    
+- kind: tickle
+  description: imagine being ticklish
+  lonely messages:
+    - This will cheer you up <user>.
+  targeted messages:
+    - <user> tickles <target>.
+    - <target> are you ticklish?
+  nano messages:
+    - <user> tickles Na- HEY STOP THAT!
+  
+- kind: wave
+  description: hi hello hey howdy wassup
+  lonely messages:
+    - <user> says hello.
+  targeted messages:
+    - Heads up <target>, <user> says hi!
+    - <user> waves at <target> 👋
+  nano messages:
+    - I see you <user>!
+
+- kind: wink
+  description: you close one eye and smile
+  lonely messages:
+    - <user> winks ;D
+  targeted messages:
+    - <user> winks at <target>.
+    - <user> are you flirting with <target>?
+  nano messages:
+    - Hey there <user>, what's up?
+    - Haha <user>, you're making me blush!
