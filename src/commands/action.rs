@@ -159,7 +159,7 @@ pub fn register(commands_data: &[ActionCommandData]) -> Vec<CommandDetails> {
         });
 
         // Hacky solution but not so bad. Will try to use less memory later
-        let kind: &'static str = Box::leak(data.kind.clone().into_boxed_str());
+        let kind: &'static str = data.kind.clone().leak();
         let command = create_command_fn(move |ctx, handler, cmd| async move {
             run(kind, ctx, &cmd, &handler.actions).await
         });
