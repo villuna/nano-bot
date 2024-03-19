@@ -9,7 +9,7 @@ use serenity::{
 };
 use tracing::error;
 
-use super::{help::HelpDetails, CommandDetails, create_command_fn};
+use super::{create_command_fn, help::HelpDetails, CommandDetails};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct SayHiData {
@@ -45,9 +45,10 @@ pub fn register() -> CommandDetails {
         ..Default::default()
     };
 
-    let command = create_command_fn(|ctx, handler, cmd| async move {
-        run(ctx, &cmd, &handler.say_hi_data).await
-    });
+    let command =
+        create_command_fn(
+            |ctx, handler, cmd| async move { run(ctx, &cmd, &handler.say_hi_data).await },
+        );
 
     CommandDetails {
         name: "sayhi".to_owned(),

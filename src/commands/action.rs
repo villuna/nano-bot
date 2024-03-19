@@ -12,7 +12,7 @@ use serenity::{
 };
 use tracing::error;
 
-use super::{help::HelpDetails, CommandDetails, create_command_fn};
+use super::{create_command_fn, help::HelpDetails, CommandDetails};
 
 const EMBED_COLOURS: &[Colour] = &[
     Colour::FABLED_PINK,
@@ -56,7 +56,12 @@ async fn get_image(kind: &str) -> reqwest::Result<String> {
     Ok(response.url)
 }
 
-pub async fn run(kind: &str, ctx: Context, cmd: &CommandInteraction, actions: &[ActionCommandData]) {
+pub async fn run(
+    kind: &str,
+    ctx: Context,
+    cmd: &CommandInteraction,
+    actions: &[ActionCommandData],
+) {
     let options = cmd.data.options();
     let data = actions.iter().find(|data| data.kind == kind).unwrap();
     let user_mention = MessageBuilder::new().mention(&cmd.user).build();

@@ -10,7 +10,7 @@ use tracing::error;
 
 use crate::utils::get_nano_icon;
 
-use super::{CommandDetails, create_command_fn};
+use super::{create_command_fn, CommandDetails};
 
 #[derive(Debug, Clone)]
 pub struct HelpDetails {
@@ -163,5 +163,10 @@ pub fn register() -> CommandDetails {
         run(ctx, &cmd, &handler.help_data.read().await).await
     });
 
-    CommandDetails { name: "help".to_owned(), registration, help, command }
+    CommandDetails {
+        name: "help".to_owned(),
+        registration,
+        help,
+        command,
+    }
 }

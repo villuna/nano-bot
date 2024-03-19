@@ -1,14 +1,14 @@
 use serenity::prelude::*;
+use std::sync::Arc;
+use std::{fs, io};
+use tokio::signal;
 use tokio::signal::unix::SignalKind;
+use tracing::{error, info};
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling::Rotation;
-use std::{fs, io};
-use std::sync::Arc;
-use tracing::{error, info};
-use tracing_subscriber::fmt;
 use tracing_subscriber::filter::EnvFilter;
+use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
-use tokio::signal;
 
 mod commands;
 mod event_handler;
@@ -46,16 +46,14 @@ async fn main() {
     // logging to file only gets done so long as this guard exists
     // so we hold onto it for the duration of the program
     let _guard = match setup_logging() {
-        Ok(guard) => {
-            Some(guard)
-        },
+        Ok(guard) => Some(guard),
         Err(e) => {
             fmt::init();
             // It does occur to me that this error message will be lost forever
             // but maybe it will be important
             error!("error setting up log file logging: {e}");
             None
-        },
+        }
     };
 
     // Bot authorisation stuff

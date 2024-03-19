@@ -1,7 +1,7 @@
-use std::{future::Future, sync::Arc};
 use std::pin::Pin;
+use std::{future::Future, sync::Arc};
 
-use serenity::{builder::CreateCommand, prelude::Context, all::CommandInteraction};
+use serenity::{all::CommandInteraction, builder::CreateCommand, prelude::Context};
 
 pub mod action;
 pub mod help;
@@ -13,18 +13,26 @@ use crate::event_handler::HandlerInner;
 
 // pwetty pleeeeeeeease stablise async closures :3333
 
-/// An async function that performs a command response. 
+/// An async function that performs a command response.
 ///
 /// Takes in a [Context], [Handler] and
 /// [CommandInteraction] and returns a future with no result.
-/// 
+///
 /// This is a boxed trait object which returns boxed trait object. To create one from a regular
 /// closure, use [create_command_fn]
-pub type CommandFn = Box<dyn Fn(Context, Arc<HandlerInner>, CommandInteraction) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>;
+pub type CommandFn = Box<
+    dyn Fn(
+            Context,
+            Arc<HandlerInner>,
+            CommandInteraction,
+        ) -> Pin<Box<dyn Future<Output = ()> + Send>>
+        + Send
+        + Sync,
+>;
 
 /// Takes in a function that returns a future, and turns it into a boxed function that returns a
 /// boxed future. Useful so we can store a bunch of type-erased async closures together.
-pub fn create_command_fn<F, R>(f: F) -> CommandFn 
+pub fn create_command_fn<F, R>(f: F) -> CommandFn
 where
     F: Fn(Context, Arc<HandlerInner>, CommandInteraction) -> R + Send + Sync + 'static,
     R: Future<Output = ()> + Send + 'static,

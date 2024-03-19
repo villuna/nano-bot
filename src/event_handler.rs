@@ -1,5 +1,5 @@
-use crate::commands::{self, CommandFn};
 use crate::commands::say_hi::SayHiData;
+use crate::commands::{self, CommandFn};
 use crate::commands::{action::ActionCommandData, help::HelpDetails};
 use crate::utils::SharedStopwatch;
 use serenity::all::Interaction;
@@ -24,7 +24,9 @@ pub struct Handler {
 
 impl Handler {
     pub fn new() -> Handler {
-        Self { inner: Arc::new(HandlerInner::new()) }
+        Self {
+            inner: Arc::new(HandlerInner::new()),
+        }
     }
 }
 
@@ -117,7 +119,8 @@ impl EventHandler for Handler {
             } else if is_bad_bot {
                 self.inner.last_interaction.unset().await;
 
-                let gif_url = "https://media1.tenor.com/m/02kmUuBVE9IAAAAd/watch-yo-tone-nichijou.gif";
+                let gif_url =
+                    "https://media1.tenor.com/m/02kmUuBVE9IAAAAd/watch-yo-tone-nichijou.gif";
 
                 if let Err(e) = msg.reply_ping(&ctx.http, gif_url).await {
                     error!("couldnt slap user: {e}");
@@ -135,10 +138,7 @@ impl EventHandler for Handler {
         // commands update instantly. For release runs, this will be global so that the commands
         // may be used anywhere.
 
-        let mut commands = vec![
-            commands::help::register(),
-            commands::say_hi::register(),
-        ];
+        let mut commands = vec![commands::help::register(), commands::say_hi::register()];
 
         commands.extend(commands::action::register(&self.inner.actions));
 
@@ -176,7 +176,11 @@ impl EventHandler for Handler {
         }
 
         for cmd in commands {
-            self.inner.commands.write().await.insert(cmd.name, cmd.command);
+            self.inner
+                .commands
+                .write()
+                .await
+                .insert(cmd.name, cmd.command);
         }
     }
 
@@ -200,7 +204,7 @@ impl EventHandler for Handler {
 
                 match self.inner.commands.read().await.get(name) {
                     Some(command) => command(ctx.clone(), Arc::clone(&self.inner), cmd).await,
-                    None => error!("Command is unrecognised: {name}"), 
+                    None => error!("Command is unrecognised: {name}"),
                 }
 
                 self.inner.last_interaction.set_now().await;
