@@ -1,7 +1,7 @@
 use rand::seq::SliceRandom;
 use serde::Deserialize;
 use serenity::{
-    all::{CommandInteraction, CommandOptionType, ResolvedOption, ResolvedValue, User},
+    all::{CommandInteraction, CommandOptionType, ResolvedValue, User},
     builder::{
         CreateCommand, CreateCommandOption, CreateEmbed, CreateInteractionResponse,
         CreateInteractionResponseMessage,
@@ -12,7 +12,7 @@ use serenity::{
 };
 use tracing::error;
 
-use super::{help::HelpDetails, CommandDetails};
+use super::{help::HelpDetails, CommandDetails, create_command_fn};
 
 const EMBED_COLOURS: &[Colour] = &[
     Colour::FABLED_PINK,
@@ -56,18 +56,8 @@ async fn get_image(kind: &str) -> reqwest::Result<String> {
     Ok(response.url)
 }
 
-pub async fn run(ctx: Context, cmd: &CommandInteraction, actions: &[ActionCommandData]) {
+pub async fn run(kind: &str, ctx: Context, cmd: &CommandInteraction, actions: &[ActionCommandData]) {
     let options = cmd.data.options();
-    let ResolvedOption {
-        name: kind,
-        value: ResolvedValue::SubCommand(options),
-        ..
-    } = options[0].clone()
-    else {
-        error!("only option should be a sub command!");
-        return;
-    };
-
     let data = actions.iter().find(|data| data.kind == kind).unwrap();
     let user_mention = MessageBuilder::new().mention(&cmd.user).build();
 
@@ -140,32 +130,42 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, actions: &[ActionComman
     }
 }
 
-pub fn register(commands: &[ActionCommandData]) -> CommandDetails {
-    let mut command =
-        CreateCommand::new("action").description("perform an action, as represented by a gif");
-    let mut help = HelpDetails {
-        name: "action".to_string(),
-        details: "perform an action, as represented by a gif".to_string(),
-        sub_commands: Vec::new(),
-    };
+pub fn register(commands_data: &[ActionCommandData]) -> Vec<CommandDetails> {
+    let mut commands = Vec::new();
 
-    for data in commands {
-        let mut action =
-            CreateCommandOption::new(CommandOptionType::SubCommand, &data.kind, &data.description);
+    for data in commands_data {
+        let mut registration = CreateCommand::new(&data.kind).description(&data.description);
+        let mut help = HelpDetails {
+            name: data.kind.clone(),
+            details: data.description.clone(),
+            sub_commands: Vec::new(),
+        };
 
         if data.targetable() {
             let target =
                 CreateCommandOption::new(CommandOptionType::User, "target", "the user to target");
-            action = action.add_sub_option(target);
+            registration = registration.add_option(target);
         }
 
-        command = command.add_option(action);
         help.sub_commands.push(HelpDetails {
             name: data.kind.clone(),
             details: data.description.clone(),
             sub_commands: Vec::new(),
         });
+
+        // Hacky solution but not so bad. Will try to use less memory later
+        let kind: &'static str = Box::leak(data.kind.clone().into_boxed_str());
+        let command = create_command_fn(move |ctx, handler, cmd| async move {
+            run(kind, ctx, &cmd, &handler.actions).await
+        });
+
+        commands.push(CommandDetails {
+            name: data.kind.clone(),
+            registration,
+            help,
+            command,
+        });
     }
 
-    CommandDetails { command, help }
+    commands
 }

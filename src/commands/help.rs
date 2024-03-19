@@ -10,7 +10,7 @@ use tracing::error;
 
 use crate::utils::get_nano_icon;
 
-use super::CommandDetails;
+use super::{CommandDetails, create_command_fn};
 
 #[derive(Debug, Clone)]
 pub struct HelpDetails {
@@ -143,7 +143,7 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, data: &[HelpDetails]) {
 }
 
 pub fn register() -> CommandDetails {
-    let command = CreateCommand::new("help")
+    let registration = CreateCommand::new("help")
         .description("A list of the commands that can be used")
         .add_option(CreateCommandOption::new(
             CommandOptionType::String,
@@ -159,5 +159,9 @@ pub fn register() -> CommandDetails {
         sub_commands: Vec::new(),
     };
 
-    CommandDetails { command, help }
+    let command = create_command_fn(|ctx, handler, cmd| async move {
+        run(ctx, &cmd, &handler.help_data.read().await).await
+    });
+
+    CommandDetails { name: "help".to_owned(), registration, help, command }
 }

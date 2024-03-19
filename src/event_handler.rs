@@ -1,4 +1,4 @@
-use crate::commands;
+use crate::commands::{self, CommandFn};
 use crate::commands::say_hi::SayHiData;
 use crate::commands::{action::ActionCommandData, help::HelpDetails};
 use crate::utils::SharedStopwatch;
@@ -7,7 +7,9 @@ use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
+use std::collections::HashMap;
 use std::fs;
+use std::sync::Arc;
 use tracing::{error, info, instrument, span, Instrument, Level};
 
 #[cfg(debug_assertions)]
@@ -16,19 +18,30 @@ use serenity::all::GuildId;
 #[cfg(not(debug_assertions))]
 use serenity::all::Command;
 
-#[derive(Debug)]
 pub struct Handler {
-    // A (static) list of all the data associated with action commands
-    // read from assets/actions.yaml
-    actions: Vec<ActionCommandData>,
-    say_hi_data: Vec<SayHiData>,
-    // Keep track of how long it's been since the bot was interacted with
-    // to make responses to "good bot" seem a bit more normal
-    last_interaction: SharedStopwatch,
-    help_data: RwLock<Vec<HelpDetails>>,
+    inner: Arc<HandlerInner>,
 }
 
 impl Handler {
+    pub fn new() -> Handler {
+        Self { inner: Arc::new(HandlerInner::new()) }
+    }
+}
+
+pub struct HandlerInner {
+    commands: RwLock<HashMap<String, CommandFn>>,
+
+    // A (static) list of all the data associated with action commands
+    // read from assets/actions.yaml
+    pub actions: Vec<ActionCommandData>,
+    pub say_hi_data: Vec<SayHiData>,
+    pub help_data: RwLock<Vec<HelpDetails>>,
+    // Keep track of how long it's been since the bot was interacted with
+    // to make responses to "good bot" seem a bit more normal
+    last_interaction: SharedStopwatch,
+}
+
+impl HandlerInner {
     pub fn new() -> Self {
         let actions =
             serde_yaml::from_str(&fs::read_to_string("assets/actions.yaml").unwrap()).unwrap();
@@ -38,6 +51,7 @@ impl Handler {
         let last_interaction = SharedStopwatch::new();
 
         Self {
+            commands: RwLock::new(HashMap::new()),
             actions,
             last_interaction,
             help_data: RwLock::new(Vec::new()),
@@ -63,10 +77,11 @@ impl EventHandler for Handler {
             if let Err(e) = msg.react(&ctx.http, '🍈').await {
                 error!("couldnt react to melo message: {e}");
             }
-            self.last_interaction.set_now().await;
+            self.inner.last_interaction.set_now().await;
         }
 
         if self
+            .inner
             .last_interaction
             .get()
             .await
@@ -90,7 +105,7 @@ impl EventHandler for Handler {
                 // Once she responds to a good/bad bot message, she probably shouldnt respond to
                 // another until she does some other helpful thing
                 // so reset the stopwatch
-                self.last_interaction.unset().await;
+                self.inner.last_interaction.unset().await;
 
                 if let Err(e) = msg
                     .channel_id
@@ -100,7 +115,7 @@ impl EventHandler for Handler {
                     error!("couldn't send thank you message: {e}");
                 }
             } else if is_bad_bot {
-                self.last_interaction.unset().await;
+                self.inner.last_interaction.unset().await;
 
                 let gif_url = "https://media1.tenor.com/m/02kmUuBVE9IAAAAd/watch-yo-tone-nichijou.gif";
 
@@ -120,13 +135,14 @@ impl EventHandler for Handler {
         // commands update instantly. For release runs, this will be global so that the commands
         // may be used anywhere.
 
-        let commands = vec![
+        let mut commands = vec![
             commands::help::register(),
             commands::say_hi::register(),
-            commands::action::register(&self.actions),
         ];
 
-        *self.help_data.write().await = commands.iter().cloned().map(|cmd| cmd.help).collect();
+        commands.extend(commands::action::register(&self.inner.actions));
+
+        *self.inner.help_data.write().await = commands.iter().map(|cmd| cmd.help.clone()).collect();
 
         cfg_if::cfg_if! {
             if #[cfg(debug_assertions)] {
@@ -142,7 +158,7 @@ impl EventHandler for Handler {
                 let register_result = test_guild_id
                     .set_commands(
                         &ctx.http,
-                        commands.iter().map(|cmd| cmd.command.clone()).collect(),
+                        commands.iter().map(|cmd| cmd.registration.clone()).collect(),
                     )
                     .await;
 
@@ -152,11 +168,15 @@ impl EventHandler for Handler {
             } else {
                 // If this is a release run, register them globally
                 for cmd in &commands {
-                    if let Err(e) = Command::create_global_command(&ctx.http, cmd.command.clone()).await {
+                    if let Err(e) = Command::create_global_command(&ctx.http, cmd.registration.clone()).await {
                         error!("error registering global command: {e}");
                     }
                 }
             }
+        }
+
+        for cmd in commands {
+            self.inner.commands.write().await.insert(cmd.name, cmd.command);
         }
     }
 
@@ -176,17 +196,14 @@ impl EventHandler for Handler {
             // the whole async move - instrument - await thing is also just for logging purposes
             async move {
                 info!("recieved command");
+                let name = cmd.data.name.as_str();
 
-                match cmd.data.name.as_str() {
-                    "sayhi" => commands::say_hi::run(ctx.clone(), &cmd, &self.say_hi_data).await,
-                    "action" => commands::action::run(ctx.clone(), &cmd, &self.actions).await,
-                    "help" => {
-                        commands::help::run(ctx.clone(), &cmd, &self.help_data.read().await).await
-                    }
-                    _ => {}
+                match self.inner.commands.read().await.get(name) {
+                    Some(command) => command(ctx.clone(), Arc::clone(&self.inner), cmd).await,
+                    None => error!("Command is unrecognised: {name}"), 
                 }
 
-                self.last_interaction.set_now().await;
+                self.inner.last_interaction.set_now().await;
             }
             .instrument(span)
             .await;

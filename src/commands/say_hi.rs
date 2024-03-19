@@ -4,11 +4,12 @@ use serde::Deserialize;
 use serenity::{
     all::{CommandInteraction, CreateCommand},
     builder::{CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage},
-    prelude::Context, utils::MessageBuilder,
+    prelude::Context,
+    utils::MessageBuilder,
 };
 use tracing::error;
 
-use super::{help::HelpDetails, CommandDetails};
+use super::{help::HelpDetails, CommandDetails, create_command_fn};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct SayHiData {
@@ -18,9 +19,7 @@ pub struct SayHiData {
 
 pub async fn run(ctx: Context, cmd: &CommandInteraction, data: &[SayHiData]) {
     let name = get_name(&ctx, &cmd.user, cmd.guild_id.as_ref()).await;
-    let sanitised_name = MessageBuilder::new()
-        .push_safe(name)
-        .build();
+    let sanitised_name = MessageBuilder::new().push_safe(name).build();
 
     let message = data.choose(&mut thread_rng()).unwrap();
     let title = &message.message;
@@ -39,12 +38,21 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, data: &[SayHiData]) {
 }
 
 pub fn register() -> CommandDetails {
-    let command = CreateCommand::new("sayhi").description("Say hi to Nano");
+    let registration = CreateCommand::new("sayhi").description("Say hi to Nano");
     let help = HelpDetails {
         name: "sayhi".to_string(),
         details: "Say hi to Nano".to_string(),
         ..Default::default()
     };
 
-    CommandDetails { command, help }
+    let command = create_command_fn(|ctx, handler, cmd| async move {
+        run(ctx, &cmd, &handler.say_hi_data).await
+    });
+
+    CommandDetails {
+        name: "sayhi".to_owned(),
+        registration,
+        help,
+        command,
+    }
 }
