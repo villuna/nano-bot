@@ -158,7 +158,7 @@ impl EventHandler for Handler {
 
                 let register_result = test_guild_id
                     .set_commands(
-                        &ctx.http,
+                        ctx,
                         commands.iter().map(|cmd| cmd.registration.clone()).collect(),
                     )
                     .await;
@@ -168,15 +168,21 @@ impl EventHandler for Handler {
                 }
             } else {
                 // If this is a release run, register them globally
-                for cmd in &commands {
-                    if let Err(e) = Command::create_global_command(&ctx.http, cmd.registration.clone()).await {
-                        error!("error registering global command: {e}");
-                    }
+                let register_result =
+                    Command::set_global_commands(
+                        ctx,
+                        commands.iter().map(|cmd| cmd.registration.clone()).collect(),
+                    )
+                    .await;
+
+                if let Err(e) = register_result {
+                    error!("error creating global commands: {e}");
                 }
             }
         }
 
         for cmd in commands {
+            info!("registered command \"{}\"", cmd.name);
             self.inner
                 .commands
                 .write()
