@@ -206,7 +206,7 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: &HandlerInner)
     handler.button_event_tx.write().await.insert(id, tx);
 
     'mainloop: loop {
-        let timeout = tokio::time::sleep(Duration::from_secs(15));
+        let timeout = tokio::time::sleep(Duration::from_secs(60));
 
         tokio::select! {
             _ = timeout => break 'mainloop,
