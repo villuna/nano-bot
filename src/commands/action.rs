@@ -140,7 +140,7 @@ pub fn register(commands_data: &[ActionCommandData]) -> Vec<CommandDetails> {
 
     for data in commands_data {
         let mut registration = CreateCommand::new(&data.kind).description(&data.description);
-        let mut help = HelpDetails {
+        let help = HelpDetails {
             name: data.kind.clone(),
             details: data.description.clone(),
             sub_commands: Vec::new(),
@@ -151,12 +151,6 @@ pub fn register(commands_data: &[ActionCommandData]) -> Vec<CommandDetails> {
                 CreateCommandOption::new(CommandOptionType::User, "target", "the user to target");
             registration = registration.add_option(target);
         }
-
-        help.sub_commands.push(HelpDetails {
-            name: data.kind.clone(),
-            details: data.description.clone(),
-            sub_commands: Vec::new(),
-        });
 
         // Hacky solution but not so bad. Will try to use less memory later
         let kind: &'static str = data.kind.clone().leak();

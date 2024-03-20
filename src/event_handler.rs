@@ -2,7 +2,7 @@ use crate::commands::say_hi::SayHiData;
 use crate::commands::{self, CommandFn};
 use crate::commands::{action::ActionCommandData, help::HelpDetails};
 use crate::utils::SharedStopwatch;
-use serenity::all::Interaction;
+use serenity::all::{ComponentInteraction, ComponentInteractionDataKind, Interaction, MessageId};
 use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
@@ -10,6 +10,8 @@ use serenity::prelude::*;
 use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
+use tokio::sync::mpsc;
+use tokio::sync::mpsc::error::SendError;
 use tracing::{error, info, instrument, span, Instrument, Level};
 
 #[cfg(debug_assertions)]
@@ -30,6 +32,7 @@ impl Handler {
     }
 }
 
+#[derive(Default)]
 pub struct HandlerInner {
     commands: RwLock<HashMap<String, CommandFn>>,
 
@@ -41,6 +44,8 @@ pub struct HandlerInner {
     // Keep track of how long it's been since the bot was interacted with
     // to make responses to "good bot" seem a bit more normal
     last_interaction: SharedStopwatch,
+
+    pub button_event_tx: RwLock<HashMap<MessageId, mpsc::Sender<ComponentInteraction>>>,
 }
 
 impl HandlerInner {
@@ -50,14 +55,10 @@ impl HandlerInner {
         let say_hi_data =
             serde_yaml::from_str(&fs::read_to_string("assets/say_hi.yaml").unwrap()).unwrap();
 
-        let last_interaction = SharedStopwatch::new();
-
         Self {
-            commands: RwLock::new(HashMap::new()),
             actions,
-            last_interaction,
-            help_data: RwLock::new(Vec::new()),
             say_hi_data,
+            ..Default::default()
         }
     }
 }
@@ -185,32 +186,65 @@ impl EventHandler for Handler {
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::Command(cmd) = interaction {
-            // just for logging purposes
-            // makes our logs display information about the command
-            // (user, guild, command name, options)
-            let span = span!(
-                Level::INFO, "command",
-                user = cmd.user.name,
-                guild = ?cmd.guild_id,
-                cmd = cmd.data.name,
-                options = ?cmd.data.options
-            );
+        match interaction {
+            Interaction::Command(cmd) => {
+                // just for logging purposes
+                // makes our logs display information about the command
+                // (user, guild, command name, options)
+                let span = span!(
+                    Level::INFO, "command",
+                    user = cmd.user.name,
+                    guild = ?cmd.guild_id,
+                    cmd = cmd.data.name,
+                    options = ?cmd.data.options
+                );
 
-            // the whole async move - instrument - await thing is also just for logging purposes
-            async move {
-                info!("recieved command");
-                let name = cmd.data.name.as_str();
+                // the whole async move - instrument - await thing is also just for logging purposes
+                async move {
+                    info!("recieved command");
+                    let name = cmd.data.name.as_str();
 
-                match self.inner.commands.read().await.get(name) {
-                    Some(command) => command(ctx.clone(), Arc::clone(&self.inner), cmd).await,
-                    None => error!("Command is unrecognised: {name}"),
+                    match self.inner.commands.read().await.get(name) {
+                        Some(command) => command(ctx.clone(), Arc::clone(&self.inner), cmd).await,
+                        None => error!("Command is unrecognised: {name}"),
+                    }
+
+                    self.inner.last_interaction.set_now().await;
                 }
-
-                self.inner.last_interaction.set_now().await;
+                .instrument(span)
+                .await;
             }
-            .instrument(span)
-            .await;
+
+            Interaction::Component(interaction) => {
+                let span = span!(
+                    Level::INFO, "command",
+                    user = interaction.user.name,
+                    guild = ?interaction.guild_id,
+                    id = interaction.data.custom_id,
+                );
+
+                async move {
+                    if matches!(interaction.data.kind, ComponentInteractionDataKind::Button) {
+                        info!("recieved button interaction. transmitting it to handler thread");
+                        let txs = self.inner.button_event_tx.read().await;
+                        if let Some(tx) = txs.get(&interaction.message.id) {
+                            if let Err(SendError(ev)) = tx.send(interaction.clone()).await {
+                                error!(
+                                    "couldn't send button event ({}) to reciever",
+                                    ev.data.custom_id
+                                );
+                                drop(txs);
+                                let mut txs = self.inner.button_event_tx.write().await;
+                                txs.remove(&interaction.message.id);
+                            }
+                        }
+                    }
+                }
+                .instrument(span)
+                .await;
+            }
+
+            _ => {}
         }
     }
 }

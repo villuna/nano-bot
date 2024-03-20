@@ -1,8 +1,8 @@
-use crate::utils::get_name;
+use crate::utils::{get_luna_icon, get_name};
 use rand::{seq::SliceRandom, thread_rng};
 use serde::Deserialize;
 use serenity::{
-    all::{CommandInteraction, CreateCommand},
+    all::{CommandInteraction, CreateCommand, CreateEmbedFooter},
     builder::{CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage},
     prelude::Context,
     utils::MessageBuilder,
@@ -25,9 +25,15 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, data: &[SayHiData]) {
     let title = &message.message;
     let gif = &message.gif;
 
+    let mut footer = CreateEmbedFooter::new("made by villuna");
+    if let Some(url) = get_luna_icon(&ctx).await {
+        footer = footer.icon_url(url);
+    }
+
     let embed = CreateEmbed::new()
         .title(title.replace("<name>", &sanitised_name))
-        .image(gif);
+        .image(gif)
+        .footer(footer);
 
     let message = CreateInteractionResponseMessage::new().embed(embed);
     let builder = CreateInteractionResponse::Message(message);

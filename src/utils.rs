@@ -2,7 +2,7 @@ use tokio::sync::RwLock;
 use tokio::time::Instant;
 
 use serenity::{
-    all::{GuildId, User},
+    all::{GuildId, User, UserId},
     prelude::Context,
 };
 
@@ -17,7 +17,7 @@ use serenity::{
 /// In that order.
 pub async fn get_name(ctx: &Context, user: &User, guild: Option<&GuildId>) -> String {
     let nickname = match guild {
-        Some(id) => user.nick_in(&ctx.http, id).await,
+        Some(id) => user.nick_in(ctx, id).await,
         None => None,
     };
 
@@ -33,6 +33,15 @@ pub async fn get_nano_icon(ctx: &Context) -> String {
 
     user.avatar_url()
         .unwrap_or_else(|| user.default_avatar_url())
+}
+
+// meeeeeee :3
+pub async fn get_luna_icon(ctx: &Context) -> Option<String> {
+    UserId::new(253682425165643786)
+        .to_user(ctx)
+        .await
+        .ok()
+        .map(|user| user.face())
 }
 
 /// A thread safe, interior-mutable stopwatch
@@ -59,5 +68,11 @@ impl SharedStopwatch {
     /// Get the start time, if any
     pub async fn get(&self) -> Option<Instant> {
         *self.0.read().await
+    }
+}
+
+impl Default for SharedStopwatch {
+    fn default() -> Self {
+        Self::new()
     }
 }
