@@ -205,16 +205,15 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: &HandlerInner)
     let (tx, mut rx) = mpsc::channel(256);
     handler.button_event_tx.write().await.insert(id, tx);
 
-    'mainloop: loop {
-        let timeout = tokio::time::sleep(Duration::from_secs(60));
-
-        tokio::select! {
-            _ = timeout => break 'mainloop,
-            res = rx.recv() => match res {
+    // This future loops forever, recieving button interactions and updating the help message
+    // accordingly. We use a timeout later to cap the running time of this loop.
+    let recv_loop = async {
+        'mainloop: loop {
+            match rx.recv().await {
                 None => {
                     error!("channel closed unexpectedly!");
                     break 'mainloop;
-                },
+                }
                 Some(interaction) => {
                     info!("recieved button interaction");
                     if interaction.data.custom_id == "back" {
@@ -225,13 +224,16 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: &HandlerInner)
                         unreachable!();
                     }
 
-                    let (embed, back, forward) = match create_message(&ctx, &handler.help_data.read().await, &options, page).await {
-                        Ok(res) => res,
-                        Err(name) => {
-                            send_error_message(&ctx.http, name).await;
-                            return;
-                        }
-                    };
+                    let (embed, back, forward) =
+                        match create_message(&ctx, &handler.help_data.read().await, &options, page)
+                            .await
+                        {
+                            Ok(res) => res,
+                            Err(name) => {
+                                send_error_message(&ctx.http, name).await;
+                                return;
+                            }
+                        };
 
                     let response = EditInteractionResponse::new()
                         .embed(embed)
@@ -249,15 +251,21 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: &HandlerInner)
                         return;
                     }
                 }
-            },
+            }
         }
+    };
+
+    // Create a timer and only run the previous loop until the timer dings
+    let timeout = tokio::time::sleep(Duration::from_secs(60));
+    tokio::select! {
+        _ = timeout => {},
+        _ = recv_loop => {},
     }
 
+    // Now we can remove the channel and update the message to have no buttons.
+    info!("shutting down handler thread for help message");
     handler.button_event_tx.write().await.remove(&id);
 
-    info!("shutting down handler thread for help message");
-    // At this point we want to prevent the user from trying to change the page
-    // so we will recreate the help message without the buttons
     let (embed, _, _) =
         match create_message(&ctx, &handler.help_data.read().await, &options, page).await {
             Ok(res) => res,
@@ -272,7 +280,7 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: &HandlerInner)
         .embed(embed);
 
     if let Err(e) = cmd.edit_response(&ctx.http, response).await {
-        error!("error sending response to help command: {e}");
+        error!("error updating help command: {e}");
     }
 }
 
