@@ -208,14 +208,14 @@ impl EventHandler for Handler {
                 // the whole async move - instrument - await thing is also just for logging purposes
                 async move {
                     info!("recieved command");
+                    self.inner.last_interaction.set_now().await;
+
                     let name = cmd.data.name.as_str();
 
                     match self.inner.commands.read().await.get(name) {
                         Some(command) => command(ctx.clone(), Arc::clone(&self.inner), cmd).await,
                         None => error!("Command is unrecognised: {name}"),
                     }
-
-                    self.inner.last_interaction.set_now().await;
                 }
                 .instrument(span)
                 .await;

@@ -1,3 +1,5 @@
+// TODO: Refactor this. It's a bit of a mishmash of broken stuff patched over
+// not the nicest code
 use std::time::Duration;
 
 use serenity::{
@@ -26,7 +28,6 @@ pub struct HelpDetails {
     pub details: String,
     pub sub_commands: Vec<HelpDetails>,
 }
-
 impl Default for HelpDetails {
     fn default() -> Self {
         Self {
@@ -37,9 +38,16 @@ impl Default for HelpDetails {
     }
 }
 
-fn create_buttons(commands: usize, page: usize) -> (CreateButton, CreateButton) {
+struct Buttons {
+    back: CreateButton,
+    accept: CreateButton,
+    forward: CreateButton,
+}
+
+fn create_buttons(commands: usize, page: usize) -> Buttons {
     let total_pages = (commands as f32 / PAGE_LENGTH as f32).ceil() as usize;
     let mut back = CreateButton::new("back").label("←");
+    let accept = CreateButton::new("accept").label("✓");
     let mut forward = CreateButton::new("forward").label("→");
 
     if page == 0 {
@@ -50,14 +58,18 @@ fn create_buttons(commands: usize, page: usize) -> (CreateButton, CreateButton) 
         forward = forward.disabled(true);
     }
 
-    (back, forward)
+    Buttons {
+        back,
+        accept,
+        forward,
+    }
 }
 
 async fn create_subcommand_help_message(
     ctx: &Context,
     details: &HelpDetails,
     page: usize,
-) -> (CreateEmbed, CreateButton, CreateButton) {
+) -> (CreateEmbed, Buttons) {
     let mut embed = CreateEmbed::new()
         .author(
             CreateEmbedAuthor::new("Nano (not a bot)")
@@ -74,15 +86,15 @@ async fn create_subcommand_help_message(
     // vertical spacing
     embed = embed.field("", "", false);
     embed = add_embed_page(embed, &details.sub_commands, Some(&details.name), page);
-    let (back, forward) = create_buttons(details.sub_commands.len(), page);
-    (embed, back, forward)
+    let buttons = create_buttons(details.sub_commands.len(), page);
+    (embed, buttons)
 }
 
 async fn create_help_message(
     ctx: &Context,
     details: &[HelpDetails],
     page: usize,
-) -> (CreateEmbed, CreateButton, CreateButton) {
+) -> (CreateEmbed, Buttons) {
     let mut embed = CreateEmbed::new()
         .author(
             CreateEmbedAuthor::new("Nano (not a bot)")
@@ -92,8 +104,8 @@ async fn create_help_message(
         .title("Here are all the commands I can perform:");
 
     embed = add_embed_page(embed, details, None, page);
-    let (back, forward) = create_buttons(details.len(), page);
-    (embed, back, forward)
+    let buttons = create_buttons(details.len(), page);
+    (embed, buttons)
 }
 
 fn add_embed_page(
@@ -131,37 +143,73 @@ fn add_embed_page(
 async fn create_message(
     ctx: &Context,
     data: &[HelpDetails],
-    options: &[ResolvedOption<'_>],
+    options: &HelpCommandOptions,
     page: usize,
-) -> Result<(CreateEmbed, CreateButton, CreateButton), String> {
-    if options.is_empty() {
-        Ok(create_help_message(ctx, data, page).await)
-    } else {
-        let ResolvedValue::String(name) = options[0].value else {
-            // should be unreachable
-            panic!("argument to help command is of incorrect type");
-        };
+) -> Result<(CreateEmbed, Buttons), String> {
+    match options {
+        HelpCommandOptions::AllCommands => Ok(create_help_message(ctx, data, page).await),
 
-        match data.iter().find(|deets| deets.name == name) {
-            None => Err(name.to_owned()),
+        HelpCommandOptions::SubCommand(name) => {
+            match data.iter().find(|deets| &deets.name == name) {
+                None => Err(name.to_owned()),
 
-            Some(
-                details @ HelpDetails {
-                    name, sub_commands, ..
-                },
-            ) => {
-                if sub_commands.is_empty() {
-                    Err(name.to_owned())
-                } else {
-                    Ok(create_subcommand_help_message(ctx, details, page).await)
+                Some(
+                    details @ HelpDetails {
+                        name, sub_commands, ..
+                    },
+                ) => {
+                    if sub_commands.is_empty() {
+                        Err(name.to_owned())
+                    } else {
+                        Ok(create_subcommand_help_message(ctx, details, page).await)
+                    }
                 }
             }
         }
     }
 }
 
+enum HelpCommandOptions {
+    AllCommands,
+    SubCommand(String),
+}
+
+fn page_count(data: &[HelpDetails], options: &HelpCommandOptions) -> Option<usize> {
+    let commands = match options {
+        HelpCommandOptions::AllCommands => Some(data.len()),
+        HelpCommandOptions::SubCommand(name) => data
+            .iter()
+            .find(|deets| &deets.name == name)
+            .and_then(|details| {
+                if details.sub_commands.is_empty() {
+                    None
+                } else {
+                    Some(details.sub_commands.len())
+                }
+            }),
+    }?;
+
+    Some((commands as f32 / PAGE_LENGTH as f32).ceil() as _)
+}
+
+impl HelpCommandOptions {
+    fn parse(options: &[ResolvedOption<'_>]) -> Self {
+        if options.is_empty() {
+            Self::AllCommands
+        } else {
+            let ResolvedValue::String(name) = options[0].value else {
+                // should be unreachable
+                panic!("argument to help command is of incorrect type");
+            };
+
+            Self::SubCommand(name.to_owned())
+        }
+    }
+}
+
 pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: &HandlerInner) {
     let options = cmd.data.options();
+    let options = HelpCommandOptions::parse(&options);
 
     let send_error_message = |http, name: String| async move {
         let message = CreateInteractionResponseMessage::new()
@@ -178,7 +226,7 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: &HandlerInner)
     };
 
     let mut page = 0;
-    let (embed, back, forward) =
+    let (embed, buttons) =
         match create_message(&ctx, &handler.help_data.read().await, &options, page).await {
             Ok(res) => res,
             Err(name) => {
@@ -189,8 +237,11 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: &HandlerInner)
 
     let message = CreateInteractionResponseMessage::new()
         .embed(embed)
-        .button(back)
-        .button(forward);
+        .button(buttons.back)
+        .button(buttons.accept)
+        .button(buttons.forward);
+
+    let total_pages = page_count(&handler.help_data.read().await, &options).unwrap();
 
     let response = CreateInteractionResponse::Message(message);
 
@@ -214,17 +265,30 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: &HandlerInner)
                     error!("channel closed unexpectedly!");
                     break 'mainloop;
                 }
-                Some(interaction) => {
+
+                Some(interaction) if interaction.user.id == cmd.user.id => {
                     info!("recieved button interaction");
-                    if interaction.data.custom_id == "back" {
-                        page -= 1;
-                    } else if interaction.data.custom_id == "forward" {
-                        page += 1;
-                    } else {
-                        unreachable!();
+                    match interaction.data.custom_id.as_str() {
+                        "back" => {
+                            page = page.saturating_sub(1);
+                        }
+
+                        "forward" => {
+                            if page < total_pages {
+                                page += 1;
+                            }
+                        }
+
+                        "accept" => {
+                            break 'mainloop;
+                        }
+
+                        s => {
+                            error!("invalid button event recieved: \"{}\"! did you forget to handle it?", s);
+                        }
                     }
 
-                    let (embed, back, forward) =
+                    let (embed, buttons) =
                         match create_message(&ctx, &handler.help_data.read().await, &options, page)
                             .await
                         {
@@ -237,8 +301,9 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: &HandlerInner)
 
                     let response = EditInteractionResponse::new()
                         .embed(embed)
-                        .button(back)
-                        .button(forward);
+                        .button(buttons.back)
+                        .button(buttons.accept)
+                        .button(buttons.forward);
 
                     if let Err(e) = cmd.edit_response(&ctx.http, response).await {
                         error!("error sending response to help command: {e}");
@@ -251,6 +316,8 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: &HandlerInner)
                         return;
                     }
                 }
+
+                _ => {}
             }
         }
     };
@@ -266,7 +333,7 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: &HandlerInner)
     info!("shutting down handler thread for help message");
     handler.button_event_tx.write().await.remove(&id);
 
-    let (embed, _, _) =
+    let (embed, _) =
         match create_message(&ctx, &handler.help_data.read().await, &options, page).await {
             Ok(res) => res,
             Err(name) => {
