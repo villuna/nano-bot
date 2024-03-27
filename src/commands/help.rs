@@ -317,7 +317,13 @@ pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: &HandlerInner)
                     }
                 }
 
-                _ => {}
+                Some(interaction) => {
+                    let acknowledge = CreateInteractionResponse::Acknowledge;
+                    if let Err(e) = interaction.create_response(&ctx.http, acknowledge).await {
+                        error!("error acknowledging button interaction from wrong user: {e}");
+                        return;
+                    }
+                }
             }
         }
     };
