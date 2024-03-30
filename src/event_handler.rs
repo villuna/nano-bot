@@ -9,6 +9,7 @@ use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 use std::collections::HashMap;
 use std::fs;
+use std::ops::Deref;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::error::SendError;
@@ -20,6 +21,7 @@ use serenity::all::GuildId;
 #[cfg(not(debug_assertions))]
 use serenity::all::Command;
 
+#[derive(Clone)]
 pub struct Handler {
     inner: Arc<HandlerInner>,
 }
@@ -32,8 +34,17 @@ impl Handler {
     }
 }
 
+impl Deref for Handler {
+    type Target = HandlerInner;
+
+    fn deref(&self) -> &HandlerInner {
+        &self.inner
+    }
+}
+
 #[derive(Default)]
 pub struct HandlerInner {
+    pub http_client: reqwest::Client,
     commands: RwLock<HashMap<String, CommandFn>>,
 
     // A (static) list of all the data associated with action commands
@@ -213,7 +224,7 @@ impl EventHandler for Handler {
                     let name = cmd.data.name.as_str();
 
                     match self.inner.commands.read().await.get(name) {
-                        Some(command) => command(ctx.clone(), Arc::clone(&self.inner), cmd).await,
+                        Some(command) => command(ctx.clone(), self.clone(), cmd).await,
                         None => error!("Command is unrecognised: {name}"),
                     }
                 }

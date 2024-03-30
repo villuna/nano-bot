@@ -10,7 +10,9 @@ use serenity::{
     prelude::Context,
     utils::MessageBuilder,
 };
-use tracing::error;
+use tracing::{error, info, instrument};
+
+use crate::event_handler::Handler;
 
 use super::{create_command_fn, help::HelpDetails, CommandDetails};
 
@@ -47,12 +49,16 @@ struct ImageResponse {
     url: String,
 }
 
-async fn get_image(kind: &str) -> reqwest::Result<String> {
-    let response = reqwest::get(format!("https://api.otakugifs.xyz/gif?reaction={kind}"))
+#[instrument(skip(client))]
+async fn get_image(client: &reqwest::Client, kind: &str) -> reqwest::Result<String> {
+    info!("sending request to otakugifs");
+    let response = client.get(format!("https://api.otakugifs.xyz/gif?reaction={kind}"))
+        .send()
         .await?
         .json::<ImageResponse>()
         .await?;
 
+    info!("recieved reponse - okay");
     Ok(response.url)
 }
 
@@ -60,10 +66,10 @@ pub async fn run(
     kind: &str,
     ctx: Context,
     cmd: &CommandInteraction,
-    actions: &[ActionCommandData],
+    handler: Handler,
 ) {
     let options = cmd.data.options();
-    let data = actions.iter().find(|data| data.kind == kind).unwrap();
+    let data = handler.actions.iter().find(|data| data.kind == kind).unwrap();
     let user_mention = MessageBuilder::new().mention(&cmd.user).build();
 
     let message = if options.is_empty()
@@ -110,7 +116,7 @@ pub async fn run(
         return;
     };
 
-    let image = match get_image(kind).await {
+    let image = match get_image(&handler.http_client, kind).await {
         Ok(res) => res,
         Err(e) => {
             error!("couldnt get image: {e}");
@@ -155,7 +161,7 @@ pub fn register(commands_data: &[ActionCommandData]) -> Vec<CommandDetails> {
         // Hacky solution but not so bad. Will try to use less memory later
         let kind: &'static str = data.kind.clone().leak();
         let command = create_command_fn(move |ctx, handler, cmd| async move {
-            run(kind, ctx, &cmd, &handler.actions).await
+            run(kind, ctx, &cmd, handler).await
         });
 
         commands.push(CommandDetails {

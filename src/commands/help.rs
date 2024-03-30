@@ -16,7 +16,8 @@ use serenity::{
 use tokio::sync::mpsc;
 use tracing::{error, info};
 
-use crate::{event_handler::HandlerInner, utils::get_nano_icon};
+use crate::utils::get_nano_icon;
+use crate::event_handler::Handler;
 
 use super::{create_command_fn, CommandDetails};
 
@@ -207,7 +208,7 @@ impl HelpCommandOptions {
     }
 }
 
-pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: &HandlerInner) {
+pub async fn run(ctx: Context, cmd: &CommandInteraction, handler: Handler) {
     let options = cmd.data.options();
     let options = HelpCommandOptions::parse(&options);
 
@@ -375,7 +376,7 @@ pub fn register() -> CommandDetails {
     };
 
     let command =
-        create_command_fn(|ctx, handler, cmd| async move { run(ctx, &cmd, &handler).await });
+        create_command_fn(|ctx, handler, cmd| async move { run(ctx, &cmd, handler).await });
 
     CommandDetails {
         name: "help".to_owned(),

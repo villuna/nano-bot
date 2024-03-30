@@ -1,5 +1,5 @@
 use std::pin::Pin;
-use std::{future::Future, sync::Arc};
+use std::future::Future;
 
 use serenity::{all::CommandInteraction, builder::CreateCommand, prelude::Context};
 
@@ -9,7 +9,7 @@ pub mod say_hi;
 
 use help::HelpDetails;
 
-use crate::event_handler::HandlerInner;
+use crate::event_handler::Handler;
 
 // pwetty pleeeeeeeease stablise async closures :3333
 
@@ -23,7 +23,7 @@ use crate::event_handler::HandlerInner;
 pub type CommandFn = Box<
     dyn Fn(
             Context,
-            Arc<HandlerInner>,
+            Handler,
             CommandInteraction,
         ) -> Pin<Box<dyn Future<Output = ()> + Send>>
         + Send
@@ -34,7 +34,7 @@ pub type CommandFn = Box<
 /// boxed future. Useful so we can store a bunch of type-erased async closures together.
 pub fn create_command_fn<F, R>(f: F) -> CommandFn
 where
-    F: Fn(Context, Arc<HandlerInner>, CommandInteraction) -> R + Send + Sync + 'static,
+    F: Fn(Context, Handler, CommandInteraction) -> R + Send + Sync + 'static,
     R: Future<Output = ()> + Send + 'static,
 {
     Box::new(move |ctx, handler, cmd| Box::pin(f(ctx, handler, cmd)))
